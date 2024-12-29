@@ -110,78 +110,107 @@
     <button onclick="copySummary()">Kopiuj</button>
 
     <script>
+        const repoOwner = "DamianMog";
+        const repoName = "missing-cars.github.io";
+        const folderPath = "images";
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
+
+        const popup = document.getElementById("popup");
+        const popupImage = popup.querySelector("img");
+        const closeButton = popup.querySelector(".close-btn");
+        const infoPopup = document.getElementById("info-popup");
+
         // Funkcja do wyświetlania popupu
         function showPopup(src) {
             popupImage.src = src;
             popup.style.display = "flex";
         }
-    
+
         // Funkcja do ukrywania popupu
         function hidePopup() {
             popup.style.display = "none";
             popupImage.src = "";
         }
-    
+
         // Obsługa klawisza ESC do zamykania popupu
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && popup.style.display === "flex") {
                 hidePopup();
             }
         });
-    
+
         // Obsługa kliknięcia w popup (tło lub obraz) do zamykania
         popup.addEventListener("click", (event) => {
             if (event.target === popup || event.target === popupImage) {
                 hidePopup();
             }
         });
-    
+
+        // Funkcja do kopiowania podsumowania
+        function copySummary() {
+            const summaryText = document.getElementById("summary").textContent;
+            navigator.clipboard.writeText(summaryText).then(() => {
+                showInfoPopup("Skopiowano!");
+            });
+        }
+
+        // Funkcja do aktualizacji podsumowania
+        function updateSummary() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const summary = document.getElementById("summary");
+
+            if (checkboxes.length === 0) {
+                summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
+            } else {
+                const selectedIds = [];
+                const selectedPrices = [];
+                
+                checkboxes.forEach(checkbox => {
+                    const row = checkbox.closest("tr");
+                    const id = row.querySelector("td:nth-child(1)").textContent;
+                    const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
+                    
+                    selectedIds.push(id);
+                    selectedPrices.push(price);
+                });
+
+                const total = selectedPrices.reduce((sum, price) => sum + price, 0);
+
+                if (selectedIds.length === 1) {
+                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
+                } else {
+                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
+                }
+            }
+        }
+
         // Pobieranie danych z API
         fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(files => {
-                const pairs = {}; // Obiekt do przechowywania par
-    
+                const pairs = {};
                 files.forEach(file => {
                     if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-                        // Podziel nazwę pliku na części
                         const parts = file.name.split("_");
-    
-                        // Usuń rozszerzenie z ostatniego elementu
                         parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
-    
-                        // Sprawdzanie poprawności formatu
                         if (parts.length >= 5) {
                             const id = parts[0];
-                            const sequence = parts[1]; // 1 lub 2
-    
+                            const sequence = parts[1];
                             if (!pairs[id]) {
                                 pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
                             }
-    
-                            if (sequence === "1") {
-                                pairs[id].photo1 = file.download_url;
-                            } else if (sequence === "2") {
-                                pairs[id].photo2 = file.download_url;
-                            }
+                            if (sequence === "1") pairs[id].photo1 = file.download_url;
+                            else if (sequence === "2") pairs[id].photo2 = file.download_url;
                         }
                     }
                 });
-    
-                // Generowanie tabeli
+
                 const gallery = document.getElementById("gallery");
-                gallery.innerHTML = ""; // Wyczyść komunikat "Ładowanie zdjęć..."
-    
+                gallery.innerHTML = "";
                 const table = document.createElement("table");
                 const thead = document.createElement("thead");
                 const tbody = document.createElement("tbody");
-    
-                // Nagłówki tabeli
+
                 thead.innerHTML = `
                     <tr>
                         <th>ID</th>
@@ -191,17 +220,11 @@
                         <th>Photo 1</th>
                         <th>Photo 2</th>
                         <th>Select</th>
-                    </tr>
-                `;
-    
-                // Wiersze tabeli
+                    </tr>`;
                 Object.keys(pairs).forEach(id => {
                     const pair = pairs[id];
-    
-                    // Sprawdzanie, czy para jest kompletna
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
-    
                         row.innerHTML = `
                             <td>${id}</td>
                             <td>${pair.name}</td>
@@ -209,29 +232,16 @@
                             <td>${pair.price}</td>
                             <td><img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')"></td>
                             <td><img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')"></td>
-                            <td>
-                                <label style="display: block; cursor: pointer;">
-                                    <input type="checkbox" onchange="updateSummary()">
-                                    <span class="checkmark">✔</span> <!-- Symbol "✔" -->
-                                    <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
-                                </label>
-                            </td>
-                        `;
-    
+                            <td><input type="checkbox" onchange="updateSummary()"></td>`;
                         tbody.appendChild(row);
                     }
                 });
-    
+
                 table.appendChild(thead);
                 table.appendChild(tbody);
                 gallery.appendChild(table);
             })
-            .catch(error => {
-                console.error("Błąd podczas pobierania danych z GitHub API:", error);
-                const gallery = document.getElementById("gallery");
-                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
-            });
+            .catch(error => console.error(error));
     </script>
-
 </body>
 </html>
