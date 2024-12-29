@@ -55,6 +55,10 @@
             color: white;
             cursor: pointer;
         }
+        /* Podświetlenie wiersza */
+        tr.selected {
+            background-color: #caf0f8;
+        }
     </style>
 </head>
 <body>
@@ -204,8 +208,24 @@
                             <td>${pair.price}</td>
                             <td><img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')"></td>
                             <td><img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')"></td>
-                            <td><input type="checkbox" onchange="updateSummary()"></td>
+                            <td><label style="display: block; cursor: pointer;"><input type="checkbox" style="display: none;" onchange="updateSummary()"></label></td>
                         `;
+
+                        // Obsługa kliknięcia w komórkę z checkboxem
+                        row.querySelector("td:last-child").addEventListener("click", (e) => {
+                            const checkbox = e.target.querySelector("input[type='checkbox']") || e.target;
+                            if (checkbox.type === "checkbox") {
+                                checkbox.checked = !checkbox.checked;
+                                updateSummary();
+
+                                // Zmiana koloru wiersza
+                                if (checkbox.checked) {
+                                    row.classList.add("selected");
+                                } else {
+                                    row.classList.remove("selected");
+                                }
+                            }
+                        });
 
                         tbody.appendChild(row);
                     }
