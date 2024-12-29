@@ -107,6 +107,13 @@
             padding: 10px 20px;
             border-radius: 5px;
             z-index: 1001;
+            /* Dodane poniżej – fadeIn/fadeOut */
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Kursor pointer w całej ostatniej kolumnie */
+        table td:last-child:hover {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -158,12 +165,29 @@
             }
         });
 
+        /**
+         * Funkcja wyświetlająca 'infoPopup' z fadeIn/fadeOut.
+         */
         function showInfoPopup(message) {
             infoPopup.textContent = message;
             infoPopup.style.display = "block";
+            // Startujemy z opacity = 0
+            infoPopup.style.opacity = "0";
+
+            // Dajemy krótki timeout na reflow, aby transition zadziałała
+            setTimeout(() => {
+                infoPopup.style.opacity = "1"; // fadeIn (0.5 s)
+            }, 10);
+
+            // Po 3.5 sekundy rozpoczynamy fadeOut
+            setTimeout(() => {
+                infoPopup.style.opacity = "0"; 
+            }, 3500);
+
+            // Po 4 sekundach całkowicie chowamy popup
             setTimeout(() => {
                 infoPopup.style.display = "none";
-            }, 3000);
+            }, 4000);
         }
 
         function copySummary() {
@@ -179,6 +203,7 @@
 
             if (checkboxes.length === 0) {
                 summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
+                showInfoPopup("Usunięto z listy.");
             } else {
                 const selectedIds = [];
                 const selectedPrices = [];
@@ -197,11 +222,7 @@
                 } else {
                     summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
-            }
-
-            if (checkboxes.length === 0) {
-                showInfoPopup("Usunięto z listy.");
-            } else {
+                
                 const totalItems = checkboxes.length;
                 const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => {
                     return sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent);
@@ -290,7 +311,7 @@
 
                         // Obsługa zaznaczenia wiersza i wyświetlania symboli
                         row.querySelector("td:last-child").addEventListener("click", (e) => {
-                            // Pobieramy checkbox z całej komórki, niezależnie w co dokładnie kliknięto (symbol, label, puste tło TD)
+                            // Pobieramy checkbox z całej komórki, niezależnie w co dokładnie kliknięto
                             const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
                             // Przełączamy stan checkboxa
                             checkbox.checked = !checkbox.checked;
