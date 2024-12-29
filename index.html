@@ -255,4 +255,59 @@
                                 } else {
                                     row.classList.remove("selected");
                                     row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "
+                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "𐄂"
+                                }
+                            }
+                        });
+
+                        // Obsługa kliknięcia w symbol "✔" i "𐄂"
+                        row.querySelector(".checkmark").addEventListener("click", () => {
+                            const checkbox = row.querySelector("input[type='checkbox']");
+                            checkbox.checked = !checkbox.checked;
+                            updateSummary();
+
+                            // Zmiana koloru wiersza
+                            if (checkbox.checked) {
+                                row.classList.add("selected");
+                                row.querySelector(".checkmark").style.display = "inline";
+                                row.querySelector(".crossmark").style.display = "none";
+                            } else {
+                                row.classList.remove("selected");
+                                row.querySelector(".checkmark").style.display = "none";
+                                row.querySelector(".crossmark").style.display = "inline";
+                            }
+                        });
+
+                        row.querySelector(".crossmark").addEventListener("click", () => {
+                            const checkbox = row.querySelector("input[type='checkbox']");
+                            checkbox.checked = !checkbox.checked;
+                            updateSummary();
+
+                            // Zmiana koloru wiersza
+                            if (checkbox.checked) {
+                                row.classList.add("selected");
+                                row.querySelector(".checkmark").style.display = "inline";
+                                row.querySelector(".crossmark").style.display = "none";
+                            } else {
+                                row.classList.remove("selected");
+                                row.querySelector(".checkmark").style.display = "none";
+                                row.querySelector(".crossmark").style.display = "inline";
+                            }
+                        });
+
+                        tbody.appendChild(row);
+                    }
+                });
+
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                gallery.appendChild(table);
+            })
+            .catch(error => {
+                console.error("Błąd podczas pobierania danych z GitHub API:", error);
+                const gallery = document.getElementById("gallery");
+                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+            });
+    </script>
+</body>
+</html>
