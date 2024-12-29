@@ -63,6 +63,12 @@
         input[type="checkbox"] {
             display: none;
         }
+        /* Stylizacja symbolu "✔" */
+        .checkmark {
+            font-size: 24px;
+            color: green;
+            display: none; /* Ukryty domyślnie */
+        }
     </style>
 </head>
 <body>
@@ -219,9 +225,12 @@
                             <td>${pair.price}</td>
                             <td><img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')"></td>
                             <td><img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')"></td>
-                            <td><label style="display: block; cursor: pointer;">
-                                <input type="checkbox" onchange="updateSummary()">
-                            </label></td>
+                            <td>
+                                <label style="display: block; cursor: pointer;">
+                                    <input type="checkbox" onchange="updateSummary()">
+                                    <span class="checkmark">✔</span> <!-- Symbol "✔" -->
+                                </label>
+                            </td>
                         `;
 
                         // Obsługa kliknięcia w komórkę z checkboxem
@@ -234,8 +243,10 @@
                                 // Zmiana koloru wiersza
                                 if (checkbox.checked) {
                                     row.classList.add("selected");
+                                    row.querySelector(".checkmark").style.display = "inline"; // Wyświetlanie symbolu "✔"
                                 } else {
                                     row.classList.remove("selected");
+                                    row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
                                 }
                             }
                         });
