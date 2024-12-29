@@ -30,7 +30,6 @@
             margin-top: 20px;
             font-size: 1.2em;
         }
-        /* Stylizacja popup */
         #popup {
             display: none;
             position: fixed;
@@ -55,27 +54,22 @@
             color: white;
             cursor: pointer;
         }
-        /* Podświetlenie wiersza */
         tr.selected {
             background-color: #caf0f8;
         }
-        /* Ukrycie checkboxa */
         input[type="checkbox"] {
             display: none;
         }
-        /* Stylizacja symbolu "✔" */
         .checkmark {
             font-size: 24px;
             color: green;
-            display: none; /* Ukryty domyślnie */
+            display: none;
         }
-        /* Stylizacja symbolu "𐄂" */
         .crossmark {
             font-size: 24px;
             color: red;
-            display: inline; /* Pokazywany domyślnie */
+            display: inline;
         }
-        /* Stylizacja dla popupu informacyjnego */
         #info-popup {
             display: none;
             position: fixed;
@@ -88,6 +82,10 @@
             border-radius: 5px;
             z-index: 1001;
         }
+        #copy-button {
+            display: none;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -97,45 +95,37 @@
     </div>
     <div id="summary">Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.</div>
 
-    <!-- Popup do wyświetlania zdjęć -->
+    <button id="copy-button" onclick="copySummary()">Kopiuj</button>
+
     <div id="popup">
         <span class="close-btn">&times;</span>
         <img src="" alt="Popup Image">
     </div>
 
-    <!-- Popup do informacji o dodaniu/odjęciu z listy -->
     <div id="info-popup"></div>
 
-    <!-- Przycisk Kopiuj -->
-    <button onclick="copySummary()">Kopiuj</button>
-
     <script>
-        // Konfiguracja
-        const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
-        const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
-        const folderPath = "images"; // Ścieżka do folderu w repozytorium
+        const repoOwner = "DamianMog";
+        const repoName = "missing-cars.github.io";
+        const folderPath = "images";
         const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
 
         const popup = document.getElementById("popup");
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
         const infoPopup = document.getElementById("info-popup");
+        const copyButton = document.getElementById("copy-button");
 
-        let selectedItems = [];
-
-        // Funkcja do wyświetlania popupu
         function showPopup(src) {
             popupImage.src = src;
             popup.style.display = "flex";
         }
 
-        // Funkcja do ukrywania popupu
         function hidePopup() {
             popup.style.display = "none";
             popupImage.src = "";
         }
 
-        // Funkcja do wyświetlania popupu informacyjnego
         function showInfoPopup(message) {
             infoPopup.textContent = message;
             infoPopup.style.display = "block";
@@ -144,31 +134,29 @@
             }, 3000);
         }
 
-        // Funkcja do kopiowania podsumowania
         function copySummary() {
             const summaryText = document.getElementById("summary").textContent;
             navigator.clipboard.writeText(summaryText).then(() => {
-                // Wyświetl popup z komunikatem "Skopiowano!"
                 showInfoPopup("Skopiowano!");
             });
         }
 
-        // Funkcja do aktualizacji podsumowania
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const summary = document.getElementById("summary");
 
             if (checkboxes.length === 0) {
                 summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
+                copyButton.style.display = "none"; // Ukryj przycisk KOPIUJ
             } else {
                 const selectedIds = [];
                 const selectedPrices = [];
-                
+
                 checkboxes.forEach(checkbox => {
                     const row = checkbox.closest("tr");
                     const id = row.querySelector("td:nth-child(1)").textContent;
                     const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
-                    
+
                     selectedIds.push(id);
                     selectedPrices.push(price);
                 });
@@ -180,64 +168,39 @@
                 } else {
                     summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
+                copyButton.style.display = "block"; // Pokaż przycisk KOPIUJ
             }
 
-            // Wyświetlanie popupu informacyjnego
-            if (checkboxes.length === 0) {
-                showInfoPopup("Usunięto z listy.");
-            } else {
-                const totalItems = checkboxes.length;
-                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent), 0);
-                showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
-            }
+            showInfoPopup(checkboxes.length === 0 ? "Usunięto z listy." : "Dodano do listy.");
         }
 
-        // Pobieranie danych z API
         fetch(apiUrl)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
             })
             .then(files => {
-                const pairs = {}; // Obiekt do przechowywania par
-
+                const pairs = {};
                 files.forEach(file => {
                     if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-                        // Podziel nazwę pliku na części
                         const parts = file.name.split("_");
-
-                        // Usuń rozszerzenie z ostatniego elementu
                         parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
-
-                        // Sprawdzanie poprawności formatu
                         if (parts.length >= 5) {
                             const id = parts[0];
-                            const sequence = parts[1]; // 1 lub 2
-
-                            if (!pairs[id]) {
-                                pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
-                            }
-
-                            if (sequence === "1") {
-                                pairs[id].photo1 = file.download_url;
-                            } else if (sequence === "2") {
-                                pairs[id].photo2 = file.download_url;
-                            }
+                            const sequence = parts[1];
+                            if (!pairs[id]) pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
+                            if (sequence === "1") pairs[id].photo1 = file.download_url;
+                            else if (sequence === "2") pairs[id].photo2 = file.download_url;
                         }
                     }
                 });
 
-                // Generowanie tabeli
                 const gallery = document.getElementById("gallery");
-                gallery.innerHTML = ""; // Wyczyść komunikat "Ładowanie zdjęć..."
-
+                gallery.innerHTML = "";
                 const table = document.createElement("table");
                 const thead = document.createElement("thead");
                 const tbody = document.createElement("tbody");
 
-                // Nagłówki tabeli
                 thead.innerHTML = `
                     <tr>
                         <th>ID</th>
@@ -250,14 +213,10 @@
                     </tr>
                 `;
 
-                // Wiersze tabeli
                 Object.keys(pairs).forEach(id => {
                     const pair = pairs[id];
-
-                    // Sprawdzanie, czy para jest kompletna
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
-
                         row.innerHTML = `
                             <td>${id}</td>
                             <td>${pair.name}</td>
@@ -268,67 +227,11 @@
                             <td>
                                 <label style="display: block; cursor: pointer;">
                                     <input type="checkbox" onchange="updateSummary()">
-                                    <span class="checkmark">✔</span> <!-- Symbol "✔" -->
-                                    <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
+                                    <span class="checkmark">✔</span>
+                                    <span class="crossmark">𐄂</span>
                                 </label>
                             </td>
                         `;
-
-                        // Obsługa kliknięcia w komórkę z checkboxem
-                        row.querySelector("td:last-child").addEventListener("click", (e) => {
-                            const checkbox = e.target.querySelector("input[type='checkbox']") || e.target;
-                            if (checkbox.type === "checkbox") {
-                                checkbox.checked = !checkbox.checked;
-                                updateSummary();
-
-                                // Zmiana koloru wiersza
-                                if (checkbox.checked) {
-                                    row.classList.add("selected");
-                                    row.querySelector(".checkmark").style.display = "inline"; // Wyświetlanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "none"; // Ukrywanie symbolu "𐄂"
-                                } else {
-                                    row.classList.remove("selected");
-                                    row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "𐄂"
-                                }
-                            }
-                        });
-
-                        // Obsługa kliknięcia w symbol "✔" i "𐄂"
-                        row.querySelector(".checkmark").addEventListener("click", () => {
-                            const checkbox = row.querySelector("input[type='checkbox']");
-                            checkbox.checked = !checkbox.checked;
-                            updateSummary();
-
-                            // Zmiana koloru wiersza
-                            if (checkbox.checked) {
-                                row.classList.add("selected");
-                                row.querySelector(".checkmark").style.display = "inline";
-                                row.querySelector(".crossmark").style.display = "none";
-                            } else {
-                                row.classList.remove("selected");
-                                row.querySelector(".checkmark").style.display = "none";
-                                row.querySelector(".crossmark").style.display = "inline";
-                            }
-                        });
-
-                        row.querySelector(".crossmark").addEventListener("click", () => {
-                            const checkbox = row.querySelector("input[type='checkbox']");
-                            checkbox.checked = !checkbox.checked;
-                            updateSummary();
-
-                            // Zmiana koloru wiersza
-                            if (checkbox.checked) {
-                                row.classList.add("selected");
-                                row.querySelector(".checkmark").style.display = "inline";
-                                row.querySelector(".crossmark").style.display = "none";
-                            } else {
-                                row.classList.remove("selected");
-                                row.querySelector(".checkmark").style.display = "none";
-                                row.querySelector(".crossmark").style.display = "inline";
-                            }
-                        });
-
                         tbody.appendChild(row);
                     }
                 });
@@ -339,8 +242,7 @@
             })
             .catch(error => {
                 console.error("Błąd podczas pobierania danych z GitHub API:", error);
-                const gallery = document.getElementById("gallery");
-                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+                document.getElementById("gallery").innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
             });
     </script>
 </body>
