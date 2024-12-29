@@ -148,7 +148,8 @@
         function copySummary() {
             const summaryText = document.getElementById("summary").textContent;
             navigator.clipboard.writeText(summaryText).then(() => {
-                alert("Podsumowanie skopiowane do schowka!");
+                // Wyświetl popup z komunikatem "Skopiowano!"
+                showInfoPopup("Skopiowano!");
             });
         }
 
