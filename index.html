@@ -110,7 +110,6 @@
     <button onclick="copySummary()">Kopiuj</button>
 
     <script>
-        // Konfiguracja
         const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
         const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
         const folderPath = "images"; // Ścieżka do folderu w repozytorium
@@ -121,21 +120,24 @@
         const closeButton = popup.querySelector(".close-btn");
         const infoPopup = document.getElementById("info-popup");
 
-        let selectedItems = [];
+        closeButton.addEventListener("click", hidePopup); // Dodano obsługę kliknięcia na przycisk zamknięcia
 
-        // Funkcja do wyświetlania popupu
         function showPopup(src) {
             popupImage.src = src;
             popup.style.display = "flex";
         }
 
-        // Funkcja do ukrywania popupu
         function hidePopup() {
             popup.style.display = "none";
             popupImage.src = "";
         }
 
-        // Funkcja do wyświetlania popupu informacyjnego
+        window.addEventListener("click", (e) => {
+            if (e.target === popup) {
+                hidePopup();
+            }
+        });
+
         function showInfoPopup(message) {
             infoPopup.textContent = message;
             infoPopup.style.display = "block";
@@ -144,16 +146,13 @@
             }, 3000);
         }
 
-        // Funkcja do kopiowania podsumowania
         function copySummary() {
             const summaryText = document.getElementById("summary").textContent;
             navigator.clipboard.writeText(summaryText).then(() => {
-                // Wyświetl popup z komunikatem "Skopiowano!"
                 showInfoPopup("Skopiowano!");
             });
         }
 
-        // Funkcja do aktualizacji podsumowania
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const summary = document.getElementById("summary");
@@ -163,12 +162,10 @@
             } else {
                 const selectedIds = [];
                 const selectedPrices = [];
-                
                 checkboxes.forEach(checkbox => {
                     const row = checkbox.closest("tr");
                     const id = row.querySelector("td:nth-child(1)").textContent;
                     const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
-                    
                     selectedIds.push(id);
                     selectedPrices.push(price);
                 });
@@ -182,7 +179,6 @@
                 }
             }
 
-            // Wyświetlanie popupu informacyjnego
             if (checkboxes.length === 0) {
                 showInfoPopup("Usunięto z listy.");
             } else {
@@ -192,7 +188,6 @@
             }
         }
 
-        // Pobieranie danych z API
         fetch(apiUrl)
             .then(response => {
                 if (!response.ok) {
@@ -201,20 +196,15 @@
                 return response.json();
             })
             .then(files => {
-                const pairs = {}; // Obiekt do przechowywania par
-
+                const pairs = {};
                 files.forEach(file => {
                     if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-                        // Podziel nazwę pliku na części
                         const parts = file.name.split("_");
-
-                        // Usuń rozszerzenie z ostatniego elementu
                         parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
 
-                        // Sprawdzanie poprawności formatu
                         if (parts.length >= 5) {
                             const id = parts[0];
-                            const sequence = parts[1]; // 1 lub 2
+                            const sequence = parts[1];
 
                             if (!pairs[id]) {
                                 pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
@@ -229,15 +219,13 @@
                     }
                 });
 
-                // Generowanie tabeli
                 const gallery = document.getElementById("gallery");
-                gallery.innerHTML = ""; // Wyczyść komunikat "Ładowanie zdjęć..."
+                gallery.innerHTML = "";
 
                 const table = document.createElement("table");
                 const thead = document.createElement("thead");
                 const tbody = document.createElement("tbody");
 
-                // Nagłówki tabeli
                 thead.innerHTML = `
                     <tr>
                         <th>ID</th>
@@ -250,11 +238,9 @@
                     </tr>
                 `;
 
-                // Wiersze tabeli
                 Object.keys(pairs).forEach(id => {
                     const pair = pairs[id];
 
-                    // Sprawdzanie, czy para jest kompletna
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
 
@@ -268,64 +254,27 @@
                             <td>
                                 <label style="display: block; cursor: pointer;">
                                     <input type="checkbox" onchange="updateSummary()">
-                                    <span class="checkmark">✔</span> <!-- Symbol "✔" -->
-                                    <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
+                                    <span class="checkmark">✔</span>
+                                    <span class="crossmark">𐄂</span>
                                 </label>
                             </td>
                         `;
 
-                        // Obsługa kliknięcia w komórkę z checkboxem
                         row.querySelector("td:last-child").addEventListener("click", (e) => {
                             const checkbox = e.target.querySelector("input[type='checkbox']") || e.target;
                             if (checkbox.type === "checkbox") {
                                 checkbox.checked = !checkbox.checked;
                                 updateSummary();
 
-                                // Zmiana koloru wiersza
                                 if (checkbox.checked) {
                                     row.classList.add("selected");
-                                    row.querySelector(".checkmark").style.display = "inline"; // Wyświetlanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "none"; // Ukrywanie symbolu "𐄂"
+                                    row.querySelector(".checkmark").style.display = "inline";
+                                    row.querySelector(".crossmark").style.display = "none";
                                 } else {
                                     row.classList.remove("selected");
-                                    row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "𐄂"
+                                    row.querySelector(".checkmark").style.display = "none";
+                                    row.querySelector(".crossmark").style.display = "inline";
                                 }
-                            }
-                        });
-
-                        // Obsługa kliknięcia w symbol "✔" i "𐄂"
-                        row.querySelector(".checkmark").addEventListener("click", () => {
-                            const checkbox = row.querySelector("input[type='checkbox']");
-                            checkbox.checked = !checkbox.checked;
-                            updateSummary();
-
-                            // Zmiana koloru wiersza
-                            if (checkbox.checked) {
-                                row.classList.add("selected");
-                                row.querySelector(".checkmark").style.display = "inline";
-                                row.querySelector(".crossmark").style.display = "none";
-                            } else {
-                                row.classList.remove("selected");
-                                row.querySelector(".checkmark").style.display = "none";
-                                row.querySelector(".crossmark").style.display = "inline";
-                            }
-                        });
-
-                        row.querySelector(".crossmark").addEventListener("click", () => {
-                            const checkbox = row.querySelector("input[type='checkbox']");
-                            checkbox.checked = !checkbox.checked;
-                            updateSummary();
-
-                            // Zmiana koloru wiersza
-                            if (checkbox.checked) {
-                                row.classList.add("selected");
-                                row.querySelector(".checkmark").style.display = "inline";
-                                row.querySelector(".crossmark").style.display = "none";
-                            } else {
-                                row.classList.remove("selected");
-                                row.querySelector(".checkmark").style.display = "none";
-                                row.querySelector(".crossmark").style.display = "inline";
                             }
                         });
 
