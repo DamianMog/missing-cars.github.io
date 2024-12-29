@@ -24,10 +24,36 @@
         }
         img {
             max-width: 100px;
+            cursor: pointer;
         }
         #summary {
             margin-top: 20px;
             font-size: 1.2em;
+        }
+        /* Stylizacja popup */
+        #popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #popup img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+        #popup .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            color: white;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -38,12 +64,42 @@
     </div>
     <div id="summary">Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.</div>
 
+    <!-- Popup do wyświetlania zdjęć -->
+    <div id="popup">
+        <span class="close-btn">&times;</span>
+        <img src="" alt="Popup Image">
+    </div>
+
     <script>
         // Konfiguracja
         const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
         const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
         const folderPath = "images"; // Ścieżka do folderu w repozytorium
         const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
+
+        const popup = document.getElementById("popup");
+        const popupImage = popup.querySelector("img");
+        const closeButton = popup.querySelector(".close-btn");
+
+        // Funkcja do wyświetlania popupu
+        function showPopup(src) {
+            popupImage.src = src;
+            popup.style.display = "flex";
+        }
+
+        // Funkcja do ukrywania popupu
+        function hidePopup() {
+            popup.style.display = "none";
+            popupImage.src = "";
+        }
+
+        // Obsługa zamykania popupu przyciskiem "X" i klawiszem ESC
+        closeButton.addEventListener("click", hidePopup);
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                hidePopup();
+            }
+        });
 
         // Funkcja do aktualizacji podsumowania
         function updateSummary() {
@@ -146,8 +202,8 @@
                             <td>${pair.name}</td>
                             <td>${pair.series}</td>
                             <td>${pair.price}</td>
-                            <td><img src="${pair.photo1}" alt="Photo 1"></td>
-                            <td><img src="${pair.photo2}" alt="Photo 2"></td>
+                            <td><img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')"></td>
+                            <td><img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')"></td>
                             <td><input type="checkbox" onchange="updateSummary()"></td>
                         `;
 
