@@ -69,6 +69,12 @@
             color: green;
             display: none; /* Ukryty domyślnie */
         }
+        /* Stylizacja symbolu "𐄂" */
+        .crossmark {
+            font-size: 24px;
+            color: red;
+            display: inline; /* Pokazywany domyślnie */
+        }
     </style>
 </head>
 <body>
@@ -229,6 +235,7 @@
                                 <label style="display: block; cursor: pointer;">
                                     <input type="checkbox" onchange="updateSummary()">
                                     <span class="checkmark">✔</span> <!-- Symbol "✔" -->
+                                    <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
                                 </label>
                             </td>
                         `;
@@ -244,9 +251,11 @@
                                 if (checkbox.checked) {
                                     row.classList.add("selected");
                                     row.querySelector(".checkmark").style.display = "inline"; // Wyświetlanie symbolu "✔"
+                                    row.querySelector(".crossmark").style.display = "none"; // Ukrywanie symbolu "𐄂"
                                 } else {
                                     row.classList.remove("selected");
                                     row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
+                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "𐄂"
                                 }
                             }
                         });
