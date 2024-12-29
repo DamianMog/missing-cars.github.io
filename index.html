@@ -3,16 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista zdjęć z GitHub API</title>
+    <title>Zdjęcia z GitHub API</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
         img {
-            max-width: 200px;
-            margin: 10px;
-            display: inline-block;
+            max-width: 100px;
         }
     </style>
 </head>
@@ -38,18 +49,73 @@
                 return response.json();
             })
             .then(files => {
+                const pairs = {}; // Obiekt do przechowywania par
+
+                files.forEach(file => {
+                    if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
+                        // Podziel nazwę pliku na części
+                        const parts = file.name.split("_");
+
+                        // Sprawdzanie poprawności formatu
+                        if (parts.length >= 4) {
+                            const id = parts[0];
+                            const sequence = parts[1]; // 1 lub 2
+
+                            if (!pairs[id]) {
+                                pairs[id] = { name: parts[2], price: parts[3], photo1: null, photo2: null };
+                            }
+
+                            if (sequence === "1") {
+                                pairs[id].photo1 = file.download_url;
+                            } else if (sequence === "2") {
+                                pairs[id].photo2 = file.download_url;
+                            }
+                        }
+                    }
+                });
+
+                // Generowanie tabeli
                 const gallery = document.getElementById("gallery");
                 gallery.innerHTML = ""; // Wyczyść komunikat "Ładowanie zdjęć..."
 
-                files.forEach(file => {
-                    // Filtrujemy tylko pliki graficzne
-                    if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-                        const img = document.createElement("img");
-                        img.src = file.download_url; // URL do zdjęcia
-                        img.alt = file.name; // Alternatywny tekst
-                        gallery.appendChild(img);
+                const table = document.createElement("table");
+                const thead = document.createElement("thead");
+                const tbody = document.createElement("tbody");
+
+                // Nagłówki tabeli
+                thead.innerHTML = `
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Photo 1</th>
+                        <th>Photo 2</th>
+                    </tr>
+                `;
+
+                // Wiersze tabeli
+                Object.keys(pairs).forEach(id => {
+                    const pair = pairs[id];
+
+                    // Sprawdzanie, czy para jest kompletna
+                    if (pair.photo1 && pair.photo2) {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td>${id}</td>
+                            <td>${pair.name}</td>
+                            <td>${pair.price}</td>
+                            <td><img src="${pair.photo1}" alt="Photo 1"></td>
+                            <td><img src="${pair.photo2}" alt="Photo 2"></td>
+                        `;
+
+                        tbody.appendChild(row);
                     }
                 });
+
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                gallery.appendChild(table);
             })
             .catch(error => {
                 console.error("Błąd podczas pobierania danych z GitHub API:", error);
