@@ -12,23 +12,23 @@
         tr, 
         img {
             -webkit-touch-callout: none; /* iOS Safari */
-            -webkit-user-select: none; /* Safari */
-            -khtml-user-select: none; /* Konqueror HTML */
-            -moz-user-select: none; /* Old versions of Firefox */
-            -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version */
+            -webkit-user-select: none;   /* Safari */
+            -khtml-user-select: none;    /* Konqueror HTML */
+            -moz-user-select: none;      /* Old versions of Firefox */
+            -ms-user-select: none;       /* Internet Explorer/Edge */
+            user-select: none;           /* Non-prefixed version */
         }
         
         /* Styl dla elementów w popupie */
-        #info-popup,
         #popup {
             -webkit-touch-callout: none; /* iOS Safari */
-            -webkit-user-select: none; /* Safari */
-            -khtml-user-select: none; /* Konqueror HTML */
-            -moz-user-select: none; /* Old versions of Firefox */
-            -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version */
+            -webkit-user-select: none;   /* Safari */
+            -khtml-user-select: none;    /* Konqueror HTML */
+            -moz-user-select: none;      /* Old versions of Firefox */
+            -ms-user-select: none;       /* Internet Explorer/Edge */
+            user-select: none;           /* Non-prefixed version */
         }
+
         table {
             border-collapse: collapse;
             width: 100%;
@@ -50,7 +50,8 @@
             margin-top: 20px;
             font-size: 1.2em;
         }
-        /* Stylizacja popup */
+
+        /* Stylizacja popup do podglądu zdjęcia */
         #popup {
             display: none;
             position: fixed;
@@ -75,6 +76,7 @@
             color: white;
             cursor: pointer;
         }
+
         /* Podświetlenie wiersza */
         tr.selected {
             background-color: #caf0f8;
@@ -95,9 +97,12 @@
             color: red;
             display: inline; /* Pokazywany domyślnie */
         }
-        /* Stylizacja dla popupu informacyjnego */
-        #info-popup {
-            display: none;
+
+        /*
+         * Stylizacja dla dynamicznie tworzonych popupów 
+         * informacyjnych (każdy osobny).
+         */
+        .info-popup {
             position: fixed;
             bottom: 20px;
             left: 50%;
@@ -106,11 +111,15 @@
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
-            z-index: 1001;
-            /* Dodane poniżej – fadeIn/fadeOut */
-            opacity: 0;
-            transition: opacity 0.5s ease-in-out;
+            opacity: 0;              /* Rozpoczynamy od 0 */
+            transition: opacity 0.5s ease-in-out; /* FadeIn/FadeOut 0.5s */
+            z-index: 1001;          /* Będzie modyfikowane w JS */
         }
+        /* Kiedy jest 'visible', ustawiamy opacity = 1 */
+        .info-popup.visible {
+            opacity: 1;
+        }
+
         /* Kursor pointer w całej ostatniej kolumnie */
         table td:last-child:hover {
             cursor: pointer;
@@ -122,16 +131,15 @@
     <div id="gallery">
         <p>Ładowanie zdjęć...</p>
     </div>
-    <div id="summary">Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.</div>
+    <div id="summary">
+        Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
+    </div>
 
     <!-- Popup do wyświetlania zdjęć -->
     <div id="popup">
         <span class="close-btn">&times;</span>
         <img src="" alt="Popup Image">
     </div>
-
-    <!-- Popup do informacji o dodaniu/odjęciu z listy -->
-    <div id="info-popup"></div>
 
     <!-- Przycisk Kopiuj -->
     <button onclick="copySummary()">Kopiuj</button>
@@ -145,7 +153,9 @@
         const popup = document.getElementById("popup");
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
-        const infoPopup = document.getElementById("info-popup");
+
+        // Zmienna do podbijania z-index dla kolejnych popupów
+        let popupZIndex = 2000;
 
         closeButton.addEventListener("click", hidePopup);
 
@@ -166,27 +176,39 @@
         });
 
         /**
-         * Funkcja wyświetlająca 'infoPopup' z fadeIn/fadeOut.
+         * Funkcja tworzy dynamicznie NOWY popup (div) 
+         * z komunikatem i obsługą fadeIn/fadeOut,
+         * niezależnie od innych popupów.
          */
         function showInfoPopup(message) {
-            infoPopup.textContent = message;
-            infoPopup.style.display = "block";
-            // Startujemy z opacity = 0
-            infoPopup.style.opacity = "0";
+            // Tworzymy nowy DIV
+            const newPopup = document.createElement('div');
+            newPopup.classList.add('info-popup');
+            newPopup.textContent = message;
 
-            // Dajemy krótki timeout na reflow, aby transition zadziałała
-            setTimeout(() => {
-                infoPopup.style.opacity = "1"; // fadeIn (0.5 s)
-            }, 10);
+            // Podnosimy z-index, aby każdy kolejny
+            // był nad poprzednim
+            newPopup.style.zIndex = popupZIndex++;
+            
+            // Dodajemy do body
+            document.body.appendChild(newPopup);
+
+            // Wpisujemy krótki 'hack' z requestAnimationFrame
+            // lub minimalnym timeoutem, aby transition zadziałała 
+            requestAnimationFrame(() => {
+                newPopup.classList.add('visible'); // fadeIn (0.5 s)
+            });
 
             // Po 3.5 sekundy rozpoczynamy fadeOut
             setTimeout(() => {
-                infoPopup.style.opacity = "0"; 
+                newPopup.classList.remove('visible'); 
             }, 3500);
 
-            // Po 4 sekundach całkowicie chowamy popup
+            // Po 4 sekundach całkowicie usuwamy popup z DOM
             setTimeout(() => {
-                infoPopup.style.display = "none";
+                if (newPopup.parentNode) {
+                    newPopup.parentNode.removeChild(newPopup);
+                }
             }, 4000);
         }
 
@@ -207,6 +229,7 @@
             } else {
                 const selectedIds = [];
                 const selectedPrices = [];
+
                 checkboxes.forEach(checkbox => {
                     const row = checkbox.closest("tr");
                     const id = row.querySelector("td:nth-child(1)").textContent;
@@ -224,9 +247,7 @@
                 }
                 
                 const totalItems = checkboxes.length;
-                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => {
-                    return sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent);
-                }, 0);
+                const totalAmount = selectedPrices.reduce((sum, p) => sum + p, 0);
                 showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
@@ -298,8 +319,12 @@
                             <td>${pair.name}</td>
                             <td>${pair.series}</td>
                             <td>${pair.price}</td>
-                            <td><img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')"></td>
-                            <td><img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')"></td>
+                            <td>
+                                <img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')">
+                            </td>
+                            <td>
+                                <img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')">
+                            </td>
                             <td>
                                 <label style="display: block; cursor: pointer;">
                                     <input type="checkbox" onchange="updateSummary()">
