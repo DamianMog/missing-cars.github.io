@@ -75,6 +75,19 @@
             color: red;
             display: inline; /* Pokazywany domyślnie */
         }
+        /* Stylizacja dla popupu informacyjnego */
+        #info-popup {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1001;
+        }
     </style>
 </head>
 <body>
@@ -90,6 +103,12 @@
         <img src="" alt="Popup Image">
     </div>
 
+    <!-- Popup do informacji o dodaniu/odjęciu z listy -->
+    <div id="info-popup"></div>
+
+    <!-- Przycisk Kopiuj -->
+    <button onclick="copySummary()">Kopiuj</button>
+
     <script>
         // Konfiguracja
         const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
@@ -100,6 +119,9 @@
         const popup = document.getElementById("popup");
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
+        const infoPopup = document.getElementById("info-popup");
+
+        let selectedItems = [];
 
         // Funkcja do wyświetlania popupu
         function showPopup(src) {
@@ -113,26 +135,28 @@
             popupImage.src = "";
         }
 
-        // Obsługa zamykania popupu przyciskiem "X" i klawiszem ESC
-        closeButton.addEventListener("click", hidePopup);
-        window.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-                hidePopup();
-            }
-        });
+        // Funkcja do wyświetlania popupu informacyjnego
+        function showInfoPopup(message) {
+            infoPopup.textContent = message;
+            infoPopup.style.display = "block";
+            setTimeout(() => {
+                infoPopup.style.display = "none";
+            }, 3000);
+        }
 
-        // Zamknięcie popupu po kliknięciu w tło
-        popup.addEventListener("click", (e) => {
-            if (e.target === popup) {
-                hidePopup();
-            }
-        });
+        // Funkcja do kopiowania podsumowania
+        function copySummary() {
+            const summaryText = document.getElementById("summary").textContent;
+            navigator.clipboard.writeText(summaryText).then(() => {
+                alert("Podsumowanie skopiowane do schowka!");
+            });
+        }
 
         // Funkcja do aktualizacji podsumowania
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const summary = document.getElementById("summary");
-            
+
             if (checkboxes.length === 0) {
                 summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
             } else {
@@ -151,10 +175,19 @@
                 const total = selectedPrices.reduce((sum, price) => sum + price, 0);
 
                 if (selectedIds.length === 1) {
-                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]}`;
+                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
                 } else {
-                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total}`;
+                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
+            }
+
+            // Wyświetlanie popupu informacyjnego
+            if (checkboxes.length === 0) {
+                showInfoPopup("Usunięto z listy.");
+            } else {
+                const totalItems = checkboxes.length;
+                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent), 0);
+                showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
 
