@@ -25,6 +25,10 @@
         img {
             max-width: 100px;
         }
+        #summary {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
@@ -32,6 +36,7 @@
     <div id="gallery">
         <p>Ładowanie zdjęć...</p>
     </div>
+    <div id="summary">Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.</div>
 
     <script>
         // Konfiguracja
@@ -39,6 +44,36 @@
         const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
         const folderPath = "images"; // Ścieżka do folderu w repozytorium
         const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
+
+        // Funkcja do aktualizacji podsumowania
+        function updateSummary() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const summary = document.getElementById("summary");
+            
+            if (checkboxes.length === 0) {
+                summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
+            } else {
+                const selectedIds = [];
+                const selectedPrices = [];
+                
+                checkboxes.forEach(checkbox => {
+                    const row = checkbox.closest("tr");
+                    const id = row.querySelector("td:nth-child(1)").textContent;
+                    const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
+                    
+                    selectedIds.push(id);
+                    selectedPrices.push(price);
+                });
+
+                const total = selectedPrices.reduce((sum, price) => sum + price, 0);
+
+                if (selectedIds.length === 1) {
+                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]}`;
+                } else {
+                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total}`;
+                }
+            }
+        }
 
         // Pobieranie danych z API
         fetch(apiUrl)
@@ -94,6 +129,7 @@
                         <th>Price</th>
                         <th>Photo 1</th>
                         <th>Photo 2</th>
+                        <th>Select</th>
                     </tr>
                 `;
 
@@ -112,6 +148,7 @@
                             <td>${pair.price}</td>
                             <td><img src="${pair.photo1}" alt="Photo 1"></td>
                             <td><img src="${pair.photo2}" alt="Photo 2"></td>
+                            <td><input type="checkbox" onchange="updateSummary()"></td>
                         `;
 
                         tbody.appendChild(row);
