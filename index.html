@@ -105,6 +105,13 @@
             }
         });
 
+        // Zamknięcie popupu po kliknięciu w tło lub zdjęcie
+        popup.addEventListener("click", (e) => {
+            if (e.target === popup || e.target === popupImage) {
+                hidePopup();
+            }
+        });
+
         // Funkcja do aktualizacji podsumowania
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
