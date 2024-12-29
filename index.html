@@ -56,6 +56,9 @@
                         // Podziel nazwę pliku na części
                         const parts = file.name.split("_");
 
+                        // Usuń rozszerzenie z ostatniego elementu
+                        parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
+
                         // Sprawdzanie poprawności formatu
                         if (parts.length >= 5) {
                             const id = parts[0];
