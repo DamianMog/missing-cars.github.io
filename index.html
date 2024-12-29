@@ -57,12 +57,12 @@
                         const parts = file.name.split("_");
 
                         // Sprawdzanie poprawności formatu
-                        if (parts.length >= 4) {
+                        if (parts.length >= 5) {
                             const id = parts[0];
                             const sequence = parts[1]; // 1 lub 2
 
                             if (!pairs[id]) {
-                                pairs[id] = { name: parts[2], price: parts[3], photo1: null, photo2: null };
+                                pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
                             }
 
                             if (sequence === "1") {
@@ -87,6 +87,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Series</th>
                         <th>Price</th>
                         <th>Photo 1</th>
                         <th>Photo 2</th>
@@ -104,6 +105,7 @@
                         row.innerHTML = `
                             <td>${id}</td>
                             <td>${pair.name}</td>
+                            <td>${pair.series}</td>
                             <td>${pair.price}</td>
                             <td><img src="${pair.photo1}" alt="Photo 1"></td>
                             <td><img src="${pair.photo2}" alt="Photo 2"></td>
