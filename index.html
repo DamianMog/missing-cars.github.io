@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista zdjęć z GitHub API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        img {
+            max-width: 200px;
+            margin: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Zdjęcia z repozytorium na GitHubie</h1>
+    <div id="gallery">
+        <p>Ładowanie zdjęć...</p>
+    </div>
+
+    <script>
+        // Konfiguracja
+        const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
+        const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
+        const folderPath = "images"; // Ścieżka do folderu w repozytorium
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
+
+        // Pobieranie danych z API
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(files => {
+                const gallery = document.getElementById("gallery");
+                gallery.innerHTML = ""; // Wyczyść komunikat "Ładowanie zdjęć..."
+
+                files.forEach(file => {
+                    // Filtrujemy tylko pliki graficzne
+                    if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
+                        const img = document.createElement("img");
+                        img.src = file.download_url; // URL do zdjęcia
+                        img.alt = file.name; // Alternatywny tekst
+                        gallery.appendChild(img);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Błąd podczas pobierania danych z GitHub API:", error);
+                const gallery = document.getElementById("gallery");
+                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+            });
+    </script>
+</body>
+</html>
