@@ -255,24 +255,4 @@
                                 } else {
                                     row.classList.remove("selected");
                                     row.querySelector(".checkmark").style.display = "none"; // Ukrywanie symbolu "✔"
-                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "𐄂"
-                                }
-                            }
-                        });
-
-                        tbody.appendChild(row);
-                    }
-                });
-
-                table.appendChild(thead);
-                table.appendChild(tbody);
-                gallery.appendChild(table);
-            })
-            .catch(error => {
-                console.error("Błąd podczas pobierania danych z GitHub API:", error);
-                const gallery = document.getElementById("gallery");
-                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
-            });
-    </script>
-</body>
-</html>
+                                    row.querySelector(".crossmark").style.display = "inline"; // Wyświetlanie symbolu "
