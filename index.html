@@ -140,7 +140,7 @@
         const closeButton = popup.querySelector(".close-btn");
         const infoPopup = document.getElementById("info-popup");
 
-        closeButton.addEventListener("click", hidePopup); // Dodano obsługę kliknięcia na przycisk zamknięcia
+        closeButton.addEventListener("click", hidePopup);
 
         function showPopup(src) {
             popupImage.src = src;
@@ -203,7 +203,9 @@
                 showInfoPopup("Usunięto z listy.");
             } else {
                 const totalItems = checkboxes.length;
-                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent), 0);
+                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => {
+                    return sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent);
+                }, 0);
                 showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
@@ -227,7 +229,13 @@
                             const sequence = parts[1];
 
                             if (!pairs[id]) {
-                                pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
+                                pairs[id] = {
+                                    name: parts[2],
+                                    series: parts[3],
+                                    price: parts[4],
+                                    photo1: null,
+                                    photo2: null
+                                };
                             }
 
                             if (sequence === "1") {
@@ -280,21 +288,24 @@
                             </td>
                         `;
 
+                        // Obsługa zaznaczenia wiersza i wyświetlania symboli
                         row.querySelector("td:last-child").addEventListener("click", (e) => {
-                            const checkbox = e.target.querySelector("input[type='checkbox']") || e.target;
-                            if (checkbox.type === "checkbox") {
-                                checkbox.checked = !checkbox.checked;
-                                updateSummary();
+                            // Pobieramy checkbox z całej komórki, niezależnie w co dokładnie kliknięto (symbol, label, puste tło TD)
+                            const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
+                            // Przełączamy stan checkboxa
+                            checkbox.checked = !checkbox.checked;
+                            // Aktualizujemy podsumowanie
+                            updateSummary();
 
-                                if (checkbox.checked) {
-                                    row.classList.add("selected");
-                                    row.querySelector(".checkmark").style.display = "inline";
-                                    row.querySelector(".crossmark").style.display = "none";
-                                } else {
-                                    row.classList.remove("selected");
-                                    row.querySelector(".checkmark").style.display = "none";
-                                    row.querySelector(".crossmark").style.display = "inline";
-                                }
+                            // Dodajemy/Usuwamy klasę selected i przełączamy wyświetlanie symbolu
+                            if (checkbox.checked) {
+                                row.classList.add("selected");
+                                row.querySelector(".checkmark").style.display = "inline";
+                                row.querySelector(".crossmark").style.display = "none";
+                            } else {
+                                row.classList.remove("selected");
+                                row.querySelector(".checkmark").style.display = "none";
+                                row.querySelector(".crossmark").style.display = "inline";
                             }
                         });
 
