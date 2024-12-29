@@ -82,10 +82,6 @@
             border-radius: 5px;
             z-index: 1001;
         }
-        #copy-button {
-            display: none;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -95,14 +91,14 @@
     </div>
     <div id="summary">Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.</div>
 
-    <button id="copy-button" onclick="copySummary()">Kopiuj</button>
-
     <div id="popup">
         <span class="close-btn">&times;</span>
         <img src="" alt="Popup Image">
     </div>
 
     <div id="info-popup"></div>
+
+    <button onclick="copySummary()">Kopiuj</button>
 
     <script>
         const repoOwner = "DamianMog";
@@ -114,7 +110,8 @@
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
         const infoPopup = document.getElementById("info-popup");
-        const copyButton = document.getElementById("copy-button");
+
+        let selectedItems = [];
 
         function showPopup(src) {
             popupImage.src = src;
@@ -147,16 +144,16 @@
 
             if (checkboxes.length === 0) {
                 summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
-                copyButton.style.display = "none"; // Ukryj przycisk KOPIUJ
+                showInfoPopup("Usunięto z listy.");
             } else {
                 const selectedIds = [];
                 const selectedPrices = [];
-
+                
                 checkboxes.forEach(checkbox => {
                     const row = checkbox.closest("tr");
                     const id = row.querySelector("td:nth-child(1)").textContent;
                     const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
-
+                    
                     selectedIds.push(id);
                     selectedPrices.push(price);
                 });
@@ -168,35 +165,55 @@
                 } else {
                     summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
-                copyButton.style.display = "block"; // Pokaż przycisk KOPIUJ
-            }
 
-            showInfoPopup(checkboxes.length === 0 ? "Usunięto z listy." : "Dodano do listy.");
+                const totalItems = checkboxes.length;
+                const totalAmount = total.toFixed(2);
+
+                if (selectedItems.length > checkboxes.length) {
+                    showInfoPopup(`Usunięto z listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount} zł`);
+                } else {
+                    showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount} zł`);
+                }
+
+                selectedItems = Array.from(checkboxes);
+            }
         }
 
         fetch(apiUrl)
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 return response.json();
             })
             .then(files => {
                 const pairs = {};
+
                 files.forEach(file => {
                     if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
                         const parts = file.name.split("_");
                         parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
+
                         if (parts.length >= 5) {
                             const id = parts[0];
                             const sequence = parts[1];
-                            if (!pairs[id]) pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
-                            if (sequence === "1") pairs[id].photo1 = file.download_url;
-                            else if (sequence === "2") pairs[id].photo2 = file.download_url;
+
+                            if (!pairs[id]) {
+                                pairs[id] = { name: parts[2], series: parts[3], price: parts[4], photo1: null, photo2: null };
+                            }
+
+                            if (sequence === "1") {
+                                pairs[id].photo1 = file.download_url;
+                            } else if (sequence === "2") {
+                                pairs[id].photo2 = file.download_url;
+                            }
                         }
                     }
                 });
 
                 const gallery = document.getElementById("gallery");
                 gallery.innerHTML = "";
+
                 const table = document.createElement("table");
                 const thead = document.createElement("thead");
                 const tbody = document.createElement("tbody");
@@ -215,8 +232,10 @@
 
                 Object.keys(pairs).forEach(id => {
                     const pair = pairs[id];
+
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
+
                         row.innerHTML = `
                             <td>${id}</td>
                             <td>${pair.name}</td>
@@ -232,6 +251,7 @@
                                 </label>
                             </td>
                         `;
+
                         tbody.appendChild(row);
                     }
                 });
@@ -242,7 +262,8 @@
             })
             .catch(error => {
                 console.error("Błąd podczas pobierania danych z GitHub API:", error);
-                document.getElementById("gallery").innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+                const gallery = document.getElementById("gallery");
+                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
             });
     </script>
 </body>
