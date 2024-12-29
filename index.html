@@ -31,7 +31,7 @@
             font-size: 1.2em;
         }
         /* Stylizacja popup */
-        #popup, #copyPopup {
+        #popup {
             display: none;
             position: fixed;
             top: 0;
@@ -47,7 +47,7 @@
             max-width: 90%;
             max-height: 90%;
         }
-        #popup .close-btn, #copyPopup .close-btn {
+        #popup .close-btn {
             position: absolute;
             top: 20px;
             right: 20px;
@@ -55,10 +55,13 @@
             color: white;
             cursor: pointer;
         }
-        /* Stylizacja dla przycisku kopiowania */
-        #copyButton {
-            margin-top: 20px;
-            cursor: pointer;
+        /* Podświetlenie wiersza */
+        tr.selected {
+            background-color: #caf0f8;
+        }
+        /* Ukrycie checkboxa */
+        input[type="checkbox"] {
+            display: none;
         }
         /* Stylizacja symbolu "✔" */
         .checkmark {
@@ -71,6 +74,19 @@
             font-size: 24px;
             color: red;
             display: inline; /* Pokazywany domyślnie */
+        }
+        /* Stylizacja dla popupu informacyjnego */
+        #info-popup {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1001;
         }
     </style>
 </head>
@@ -87,14 +103,11 @@
         <img src="" alt="Popup Image">
     </div>
 
-    <!-- Popup dla skopiowania -->
-    <div id="copyPopup">
-        <span class="close-btn">&times;</span>
-        <p>Skopiowano!</p>
-    </div>
+    <!-- Popup do informacji o dodaniu/odjęciu z listy -->
+    <div id="info-popup"></div>
 
     <!-- Przycisk Kopiuj -->
-    <button id="copyButton" style="display: none;" onclick="copyToClipboard()">Kopiuj</button>
+    <button onclick="copySummary()">Kopiuj</button>
 
     <script>
         // Konfiguracja
@@ -106,9 +119,8 @@
         const popup = document.getElementById("popup");
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
-        const copyPopup = document.getElementById("copyPopup");
-        const copyButton = document.getElementById("copyButton");
-        const summary = document.getElementById("summary");
+        const infoPopup = document.getElementById("info-popup");
+
         let selectedItems = [];
 
         // Funkcja do wyświetlania popupu
@@ -123,37 +135,31 @@
             popupImage.src = "";
         }
 
-        // Funkcja do wyświetlania popupu skopiowania
-        function showCopyPopup() {
-            copyPopup.style.display = "flex";
+        // Funkcja do wyświetlania popupu informacyjnego
+        function showInfoPopup(message) {
+            infoPopup.textContent = message;
+            infoPopup.style.display = "block";
             setTimeout(() => {
-                copyPopup.style.display = "none";
+                infoPopup.style.display = "none";
             }, 3000);
         }
 
-        // Funkcja do kopiowania tekstu
-        function copyToClipboard() {
-            const text = summary.textContent;
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textArea);
-
-            showCopyPopup();
+        // Funkcja do kopiowania podsumowania
+        function copySummary() {
+            const summaryText = document.getElementById("summary").textContent;
+            navigator.clipboard.writeText(summaryText).then(() => {
+                alert("Podsumowanie skopiowane do schowka!");
+            });
         }
 
         // Funkcja do aktualizacji podsumowania
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-            
+            const summary = document.getElementById("summary");
+
             if (checkboxes.length === 0) {
-                copyButton.style.display = "none"; // Ukrywanie przycisku Kopiuj
                 summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
             } else {
-                copyButton.style.display = "inline-block"; // Pokazywanie przycisku Kopiuj
-                
                 const selectedIds = [];
                 const selectedPrices = [];
                 
@@ -169,12 +175,19 @@
                 const total = selectedPrices.reduce((sum, price) => sum + price, 0);
 
                 if (selectedIds.length === 1) {
-                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]}`;
+                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
                 } else {
-                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total}`;
+                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
+            }
 
-                selectedItems = selectedIds;
+            // Wyświetlanie popupu informacyjnego
+            if (checkboxes.length === 0) {
+                showInfoPopup("Usunięto z listy.");
+            } else {
+                const totalItems = checkboxes.length;
+                const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent), 0);
+                showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
 
@@ -254,8 +267,8 @@
                             <td>
                                 <label style="display: block; cursor: pointer;">
                                     <input type="checkbox" onchange="updateSummary()">
-                                    <span class="checkmark">✔</span>
-                                    <span class="crossmark">𐄂</span>
+                                    <span class="checkmark">✔</span> <!-- Symbol "✔" -->
+                                    <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
                                 </label>
                             </td>
                         `;
