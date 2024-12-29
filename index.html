@@ -114,7 +114,7 @@
         const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
         const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
         const folderPath = "images"; // Ścieżka do folderu w repozytorium
-        const apiUrl = https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath};
+        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
 
         const popup = document.getElementById("popup");
         const popupImage = popup.querySelector("img");
@@ -176,9 +176,9 @@
                 const total = selectedPrices.reduce((sum, price) => sum + price, 0);
 
                 if (selectedIds.length === 1) {
-                    summary.textContent = Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł;
+                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
                 } else {
-                    summary.textContent = Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł;
+                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
             }
 
@@ -188,7 +188,7 @@
             } else {
                 const totalItems = checkboxes.length;
                 const totalAmount = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseFloat(checkbox.closest("tr").querySelector("td:nth-child(4)").textContent), 0);
-                showInfoPopup(Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł);
+                showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
 
@@ -196,7 +196,7 @@
         fetch(apiUrl)
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(HTTP error! status: ${response.status});
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 return response.json();
             })
@@ -238,7 +238,7 @@
                 const tbody = document.createElement("tbody");
 
                 // Nagłówki tabeli
-                thead.innerHTML = 
+                thead.innerHTML = `
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
@@ -248,7 +248,7 @@
                         <th>Photo 2</th>
                         <th>Select</th>
                     </tr>
-                ;
+                `;
 
                 // Wiersze tabeli
                 Object.keys(pairs).forEach(id => {
@@ -258,7 +258,7 @@
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
 
-                        row.innerHTML = 
+                        row.innerHTML = `
                             <td>${id}</td>
                             <td>${pair.name}</td>
                             <td>${pair.series}</td>
@@ -272,7 +272,7 @@
                                     <span class="crossmark">𐄂</span> <!-- Symbol "𐄂" -->
                                 </label>
                             </td>
-                        ;
+                        `;
 
                         // Obsługa kliknięcia w komórkę z checkboxem
                         row.querySelector("td:last-child").addEventListener("click", (e) => {
