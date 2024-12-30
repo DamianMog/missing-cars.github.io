@@ -95,6 +95,9 @@
     /*
      * Każdy popup informacyjny (tworzony dynamicznie)
      * z fade in / fade out (0.3 s) i 2 sekundy pełnej widoczności.
+     *
+     * Podwojony odstęp prawej (80px) względem poprzedniej wersji,
+     * by zwiększyć dystans "X" od tekstu.
      */
     .info-popup {
       position: fixed;
@@ -103,21 +106,26 @@
       transform: translateX(-50%);
       background-color: #4CAF50;
       color: white;
-      padding: 10px 40px 10px 15px; /* miejsce na X z prawej */
+      padding: 10px 80px 10px 15px; /* <-- zwiększony prawy padding */
       border-radius: 5px;
-      opacity: 0; /* Start od 0 */
+      opacity: 0; /* start od 0 */
       transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut 0.3s */
       z-index: 1001;
-      /* Docelowa przezroczystość: 90% (0.9) */
     }
+
+    /* FadeIn docelowo do 0.9 */
     .info-popup.visible {
       opacity: 0.9;
     }
 
-    /* Ikona X w popupie informacyjnym */
+    /*
+     * Ikona X w popupie: pozycjonowanie absolutne,
+     * wypośrodkowane w pionie i odsunięte od prawej.
+     */
     .info-popup .info-popup-close {
       position: absolute;
-      top: 5px;
+      top: 50%;
+      transform: translateY(-50%);
       right: 10px;
       cursor: pointer;
       color: #fff;
@@ -162,6 +170,10 @@
     // Zmienna do podbijania z-index przy kolejnych powiadomieniach:
     let popupZIndex = 2000;
 
+    // Zmienna globalna przechowująca obecnie widoczny popup
+    // (jeżeli istnieje)
+    let currentInfoPopup = null;
+
     // Zamknięcie popupu z powiększonym zdjęciem
     closeButton.addEventListener("click", hidePopup);
 
@@ -183,12 +195,17 @@
     });
 
     /**
-     * Tworzy dynamicznie NOWY popup (div)
-     * i animuje go niezależnie (fadeIn / fadeOut).
-     * 0.3 sek. fadeIn, 2 sek. wyświetlania, 0.3 sek. fadeOut.
-     * Ikonka "X" daje możliwość natychmiastowego zamknięcia.
+     * Funkcja tworzy dynamicznie NOWY popup (div)
+     * i animuje go (fadeIn → 2s widoczności → fadeOut 0.3s).
+     * Każdy nowy popup natychmiast usuwa poprzedni (bez fadeOut).
      */
     function showInfoPopup(message) {
+      // Jeżeli istnieje poprzedni popup, usuwamy go natychmiast:
+      if (currentInfoPopup) {
+        currentInfoPopup.remove();
+        currentInfoPopup = null;
+      }
+
       // Tworzymy kontener popupa
       const newPopup = document.createElement('div');
       newPopup.classList.add('info-popup');
@@ -206,11 +223,15 @@
       newPopup.appendChild(closeBtn);
       newPopup.appendChild(textSpan);
 
-      // Podbijamy z-index, aby kolejny popup był nad poprzednimi
+      // Podbijamy z-index, aby każdy kolejny
+      // był nad poprzednimi
       newPopup.style.zIndex = popupZIndex++;
 
       // Dodajemy do body
       document.body.appendChild(newPopup);
+
+      // Ustawiamy ten popup jako "bieżący"
+      currentInfoPopup = newPopup;
 
       // Krótka pauza, by transition zadziałała (fadeIn)
       requestAnimationFrame(() => {
@@ -230,6 +251,10 @@
         if (newPopup.parentNode) {
           newPopup.parentNode.removeChild(newPopup);
         }
+        // Zerujemy currentInfoPopup gdy się zamknie automatycznie
+        if (currentInfoPopup === newPopup) {
+          currentInfoPopup = null;
+        }
       }, 2600);
 
       // Obsługa kliknięcia w "X" → natychmiastowy fadeOut i usunięcie
@@ -237,12 +262,18 @@
         // Czyścimy timery
         clearTimeout(closeTimer);
         clearTimeout(removeTimer);
+
         // Rozpoczynamy fadeOut
         newPopup.classList.remove('visible');
+
         // Usuwamy element po 0.3s (czas fadeOut)
         setTimeout(() => {
           if (newPopup.parentNode) {
             newPopup.parentNode.removeChild(newPopup);
+          }
+          // Jeśli to nasz bieżący popup, zerujemy go
+          if (currentInfoPopup === newPopup) {
+            currentInfoPopup = null;
           }
         }, 300);
       });
