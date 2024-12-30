@@ -5,21 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Zdjęcia z GitHub API</title>
   <style>
+    /* Podstawowe style/reset */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
     }
-    tr,
-    img {
-      -webkit-touch-callout: none; /* iOS Safari */
-      -webkit-user-select: none;   /* Safari */
-      -khtml-user-select: none;    /* Konqueror HTML */
-      -moz-user-select: none;      /* Old versions of Firefox */
-      -ms-user-select: none;       /* Internet Explorer/Edge */
-      user-select: none;           /* Non-prefixed version */
+    /* Zapobieganie zaznaczaniu elementów */
+    tr, img {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
     }
 
-    /* Tabela z modelami */
+    /* Tabela z listą modeli */
     table {
       border-collapse: collapse;
       width: 100%;
@@ -37,19 +38,18 @@
       max-width: 100px;
       cursor: pointer;
     }
+    /* Podsumowanie wybranych modeli */
     #summary {
       margin-top: 20px;
       font-size: 1.2em;
     }
 
-    /* Popup do powiększania zdjęć */
+    /* Popup do powiększenia zdjęcia */
     #popup {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.8);
       justify-content: center;
       align-items: center;
@@ -59,45 +59,42 @@
       max-width: 90%;
       max-height: 90%;
     }
+    /* Przycisk "X" w popupie ze zdjęciem */
     #popup .close-btn {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 20px; right: 20px;
       font-size: 30px;
       color: white;
       cursor: pointer;
     }
 
-    /* Podświetlenie wiersza */
+    /* Wyróżnienie wybranego wiersza */
     tr.selected {
       background-color: #caf0f8;
     }
 
-    /* Ukrycie checkboxa */
+    /* Ukrywamy checkbox, bo zastępujemy go ikonami */
     input[type="checkbox"] {
       display: none;
     }
 
-    /* Stylizacja symbolu "✔" */
+    /* Ikony w wierszu: "✔" pojawia się po zaznaczeniu, "𐄂" – domyślnie */
     .checkmark {
       font-size: 24px;
       color: green;
-      display: none; /* Ukryty domyślnie */
+      display: none; /* Początkowo ukryta */
     }
-
-    /* Stylizacja symbolu "𐄂" */
     .crossmark {
       font-size: 24px;
       color: red;
-      display: inline; /* Pokazywany domyślnie */
+      display: inline; /* Początkowo widoczna */
     }
 
     /*
-     * Każdy popup informacyjny (tworzony dynamicznie)
-     * z fade in / fade out (0.3 s) i 2 sekundy pełnej widoczności.
-     *
-     * Podwojony odstęp prawej (80px) względem poprzedniej wersji,
-     * by zwiększyć dystans "X" od tekstu.
+     * Popupy informacyjne (komunikaty) w dolnej części ekranu.
+     *  - Fade in/out: 0.3 s
+     *  - 2 s pełnej widoczności
+     *  - Każdy nowy popup zamyka poprzedni bez animacji
      */
     .info-popup {
       position: fixed;
@@ -106,34 +103,27 @@
       transform: translateX(-50%);
       background-color: #4CAF50;
       color: white;
-      padding: 10px 80px 10px 15px; /* <-- zwiększony prawy padding */
+      padding: 10px 80px 10px 15px; /* Zwiększony odstęp na przycisk X */
       border-radius: 5px;
-      opacity: 0; /* start od 0 */
-      transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut 0.3s */
+      opacity: 0; /* start od 0 (niewidoczny) */
+      transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut */
       z-index: 1001;
     }
-
-    /* FadeIn docelowo do 0.9 */
     .info-popup.visible {
-      opacity: 0.9;
+      opacity: 0.9; /* docelowa widoczność 90% */
     }
-
-    /*
-     * Ikona X w popupie: pozycjonowanie absolutne,
-     * wypośrodkowane w pionie i odsunięte od prawej.
-     */
+    /* Przyciski "X" do natychmiastowego zamknięcia info-popupa */
     .info-popup .info-popup-close {
       position: absolute;
-      top: 50%;
+      top: 50%; right: 10px;
       transform: translateY(-50%);
-      right: 10px;
       cursor: pointer;
       color: #fff;
       font-size: 20px;
       font-weight: bold;
     }
 
-    /* Kursor pointer w całej ostatniej kolumnie */
+    /* Wskazywanie kursorem w ostatniej kolumnie (Select) */
     table td:last-child:hover {
       cursor: pointer;
     }
@@ -141,145 +131,134 @@
 </head>
 <body>
   <h1>Lista modeli do na sprzedaż - 29.12.2024</h1>
+
+  <!-- Miejsce na tabelę z danymi -->
   <div id="gallery">
     <p>Ładowanie zdjęć...</p>
   </div>
+
+  <!-- Sekcja podsumowania -->
   <div id="summary">
     Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
   </div>
 
-  <!-- Popup do wyświetlania zdjęć -->
+  <!-- Popup do powiększenia zdjęć -->
   <div id="popup">
     <span class="close-btn">&times;</span>
     <img src="" alt="Popup Image" />
   </div>
 
-  <!-- Przycisk Kopiuj -->
+  <!-- Przycisk do kopiowania treści z #summary -->
   <button onclick="copySummary()">Kopiuj</button>
 
   <script>
-    const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
-    const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
-    const folderPath = "images"; // Ścieżka do folderu w repozytorium
+    /*************************************************************
+     * KONFIGURACJA POŁĄCZENIA Z GITHUB
+     *************************************************************/
+    const repoOwner = "DamianMog";         // Nazwa użytkownika
+    const repoName = "missing-cars.github.io"; // Nazwa repo
+    const folderPath = "images";           // Ścieżka do folderu
     const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
 
+    /*************************************************************
+     * GLOBALNE ZMIENNE I ELEMENTY
+     *************************************************************/
     const popup = document.getElementById("popup");
     const popupImage = popup.querySelector("img");
     const closeButton = popup.querySelector(".close-btn");
 
-    // Zmienna do podbijania z-index przy kolejnych powiadomieniach:
+    // Zwiększany z każdą nową wiadomością (info-popup)
     let popupZIndex = 2000;
-
-    // Zmienna globalna przechowująca obecnie widoczny popup
-    // (jeżeli istnieje)
+    // Przechowuje referencję do aktualnego info-popupa
     let currentInfoPopup = null;
 
-    // Zamknięcie popupu z powiększonym zdjęciem
-    closeButton.addEventListener("click", hidePopup);
+    /*************************************************************
+     * POPUP ZE ZDJĘCIEM (SHOW/HIDE)
+     *************************************************************/
+    closeButton.addEventListener("click", hidePhotoPopup);
 
-    function showPopup(src) {
+    function showPhotoPopup(src) {
       popupImage.src = src;
       popup.style.display = "flex";
     }
-
-    function hidePopup() {
+    function hidePhotoPopup() {
       popup.style.display = "none";
       popupImage.src = "";
     }
-
-    // Kliknięcie w tło popupu zamyka go
+    // Kliknięcie w tło popupu (poza zdjęciem) → zamknięcie
     window.addEventListener("click", (e) => {
-      if (e.target === popup) {
-        hidePopup();
-      }
+      if (e.target === popup) hidePhotoPopup();
     });
 
-    /**
-     * Funkcja tworzy dynamicznie NOWY popup (div)
-     * i animuje go (fadeIn → 2s widoczności → fadeOut 0.3s).
-     * Każdy nowy popup natychmiast usuwa poprzedni (bez fadeOut).
-     */
+    /*************************************************************
+     * INFO POPUP - KOMUNIKATY O ZAKUPIE, KOPIOWANIU, ETC.
+     *************************************************************/
     function showInfoPopup(message) {
-      // Jeżeli istnieje poprzedni popup, usuwamy go natychmiast:
+      // Usunięcie poprzedniego popupa (bez animacji)
       if (currentInfoPopup) {
         currentInfoPopup.remove();
         currentInfoPopup = null;
       }
 
-      // Tworzymy kontener popupa
-      const newPopup = document.createElement('div');
-      newPopup.classList.add('info-popup');
+      // Tworzymy nowy popup
+      const newPopup = document.createElement("div");
+      newPopup.classList.add("info-popup");
 
-      // Tworzymy ikonkę "X"
-      const closeBtn = document.createElement('span');
-      closeBtn.classList.add('info-popup-close');
-      closeBtn.innerHTML = '&times;';
+      // Ikona "X" (natychmiastowe zamknięcie)
+      const closeBtn = document.createElement("span");
+      closeBtn.classList.add("info-popup-close");
+      closeBtn.innerHTML = "&times;";
 
-      // Tworzymy span z tekstem wiadomości
-      const textSpan = document.createElement('span');
+      // Tekst komunikatu
+      const textSpan = document.createElement("span");
       textSpan.textContent = message;
 
-      // Dodajemy "X" i tekst do popupa
+      // Składanie elementów
       newPopup.appendChild(closeBtn);
       newPopup.appendChild(textSpan);
 
-      // Podbijamy z-index, aby każdy kolejny
-      // był nad poprzednimi
+      // Z-index rośnie, by nowy popup był nad poprzednimi
       newPopup.style.zIndex = popupZIndex++;
 
       // Dodajemy do body
       document.body.appendChild(newPopup);
-
-      // Ustawiamy ten popup jako "bieżący"
       currentInfoPopup = newPopup;
 
-      // Krótka pauza, by transition zadziałała (fadeIn)
-      requestAnimationFrame(() => {
-        newPopup.classList.add('visible');
-      });
+      // FadeIn (0.3 s)
+      requestAnimationFrame(() => newPopup.classList.add("visible"));
 
-      // Timery do automatycznego zamknięcia
-      let closeTimer, removeTimer;
-
-      // Po upływie 0.3 + 2 = 2.3s zaczyna się fadeOut
-      closeTimer = setTimeout(() => {
-        newPopup.classList.remove('visible');
+      // Timery do automatycznego zamknięcia:
+      // Po 2.3 s → fadeOut
+      const closeTimer = setTimeout(() => {
+        newPopup.classList.remove("visible");
       }, 2300);
 
-      // Po 0.3 + 2 + 0.3 = 2.6s usuwamy popup z DOM
-      removeTimer = setTimeout(() => {
+      // Po 2.6 s → usunięcie z DOM
+      const removeTimer = setTimeout(() => {
         if (newPopup.parentNode) {
           newPopup.parentNode.removeChild(newPopup);
         }
-        // Zerujemy currentInfoPopup gdy się zamknie automatycznie
-        if (currentInfoPopup === newPopup) {
-          currentInfoPopup = null;
-        }
+        if (currentInfoPopup === newPopup) currentInfoPopup = null;
       }, 2600);
 
-      // Obsługa kliknięcia w "X" → natychmiastowy fadeOut i usunięcie
-      closeBtn.addEventListener('click', () => {
-        // Czyścimy timery
+      // Kliknięcie w "X" usuwa popup bez czekania
+      closeBtn.addEventListener("click", () => {
         clearTimeout(closeTimer);
         clearTimeout(removeTimer);
 
-        // Rozpoczynamy fadeOut
-        newPopup.classList.remove('visible');
-
-        // Usuwamy element po 0.3s (czas fadeOut)
+        newPopup.classList.remove("visible");
         setTimeout(() => {
           if (newPopup.parentNode) {
             newPopup.parentNode.removeChild(newPopup);
           }
-          // Jeśli to nasz bieżący popup, zerujemy go
-          if (currentInfoPopup === newPopup) {
-            currentInfoPopup = null;
-          }
+          if (currentInfoPopup === newPopup) currentInfoPopup = null;
         }, 300);
       });
     }
 
-    // Kopiowanie treści z #summary
+    /*************************************************************
+     * KOPIOWANIE TEKSTU Z #SUMMARY DO SCHOWKA
+     *************************************************************/
     function copySummary() {
       const summaryText = document.getElementById("summary").textContent;
       navigator.clipboard.writeText(summaryText).then(() => {
@@ -287,43 +266,53 @@
       });
     }
 
-    // Aktualizacja podsumowania po zaznaczeniu/odznaczeniu checkboxa
+    /*************************************************************
+     * OBSŁUGA ZAZNACZANIA (CHECKBOX) I PODSUMOWANIA
+     *************************************************************/
     function updateSummary() {
       const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
       const summary = document.getElementById("summary");
 
+      // Gdy nic nie zaznaczono
       if (checkboxes.length === 0) {
         summary.textContent =
           "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
         showInfoPopup("Usunięto z listy.");
-      } else {
-        const selectedIds = [];
-        const selectedPrices = [];
-
-        checkboxes.forEach((checkbox) => {
-          const row = checkbox.closest("tr");
-          const id = row.querySelector("td:nth-child(1)").textContent;
-          const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
-          selectedIds.push(id);
-          selectedPrices.push(price);
-        });
-
-        const total = selectedPrices.reduce((sum, price) => sum + price, 0);
-
-        if (selectedIds.length === 1) {
-          summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
-        } else {
-          summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
-        }
-
-        const totalItems = checkboxes.length;
-        showInfoPopup(
-          `Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${total.toFixed(2)} zł`
-        );
+        return;
       }
+
+      // Coś jest zaznaczone
+      const selectedIds = [];
+      const selectedPrices = [];
+
+      // Zbieramy ID i ceny
+      checkboxes.forEach((checkbox) => {
+        const row = checkbox.closest("tr");
+        const id = row.querySelector("td:nth-child(1)").textContent;
+        const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
+        selectedIds.push(id);
+        selectedPrices.push(price);
+      });
+
+      // Liczenie sumy
+      const total = selectedPrices.reduce((acc, val) => acc + val, 0);
+
+      // Zmiana tekstu w #summary
+      if (selectedIds.length === 1) {
+        summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}.\nŁączna kwota: ${total} zł`;
+      } else {
+        summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}.\nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
+      }
+
+      // Wyświetlamy popup z informacją
+      showInfoPopup(
+        `Dodano do listy. Łącznie ${checkboxes.length} elementów. Łączna kwota: ${total.toFixed(2)} zł`
+      );
     }
 
-    // Pobieramy z GitHuba listę plików w folderze images i budujemy tabelkę
+    /*************************************************************
+     * POBIERANIE DANYCH Z GITHUB I BUDOWA TABELI
+     *************************************************************/
     fetch(apiUrl)
       .then((response) => {
         if (!response.ok) {
@@ -332,39 +321,32 @@
         return response.json();
       })
       .then((files) => {
+        // Parsujemy listę plików, grupując je po ID
         const pairs = {};
+
         files.forEach((file) => {
-          // Szukamy plików z rozszerzeniem graficznym
+          // Interesują nas tylko pliki z rozszerzeniem jpg/jpeg/png/gif
           if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
             const parts = file.name.split("_");
+            // Ostatni fragment nazwy (np. "1.jpg") usuwamy rozszerzenie
             parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
 
-            // Minimum 5 części: ID, 1/2, Name, Series, Price
+            // Minimum 5 części: [id, sequence, name, series, price]
             if (parts.length >= 5) {
-              const id = parts[0];
-              const sequence = parts[1];
-
+              const [id, sequence, name, series, price] = parts;
               if (!pairs[id]) {
-                pairs[id] = {
-                  name: parts[2],
-                  series: parts[3],
-                  price: parts[4],
-                  photo1: null,
-                  photo2: null,
-                };
+                pairs[id] = { name, series, price, photo1: null, photo2: null };
               }
-
-              if (sequence === "1") {
-                pairs[id].photo1 = file.download_url;
-              } else if (sequence === "2") {
-                pairs[id].photo2 = file.download_url;
-              }
+              // Przypisujemy zdjęcia do photo1 lub photo2
+              if (sequence === "1") pairs[id].photo1 = file.download_url;
+              if (sequence === "2") pairs[id].photo2 = file.download_url;
             }
           }
         });
 
+        // Tworzymy tabelę w #gallery
         const gallery = document.getElementById("gallery");
-        gallery.innerHTML = "";
+        gallery.innerHTML = ""; // Czyścimy placeholder
 
         const table = document.createElement("table");
         const thead = document.createElement("thead");
@@ -382,57 +364,58 @@
           </tr>
         `;
 
-        // Tworzymy wiersz dla każdego zestawu
+        // Dodajemy wiersze dla każdego ID, o ile ma photo1 i photo2
         Object.keys(pairs).forEach((id) => {
-          const pair = pairs[id];
+          const { name, series, price, photo1, photo2 } = pairs[id];
+          if (!photo1 || !photo2) return; // Musimy mieć oba zdjęcia
 
-          // Tylko jeśli mamy oba zdjęcia
-          if (pair.photo1 && pair.photo2) {
-            const row = document.createElement("tr");
+          // Tworzymy wiersz
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${id}</td>
+            <td>${name}</td>
+            <td>${series}</td>
+            <td>${price}</td>
+            <td><img src="${photo1}" alt="Photo 1"></td>
+            <td><img src="${photo2}" alt="Photo 2"></td>
+            <td>
+              <label style="display: block; cursor: pointer;">
+                <input type="checkbox" onchange="updateSummary()">
+                <span class="checkmark">✔</span>
+                <span class="crossmark">𐄂</span>
+              </label>
+            </td>
+          `;
 
-            row.innerHTML = `
-              <td>${id}</td>
-              <td>${pair.name}</td>
-              <td>${pair.series}</td>
-              <td>${pair.price}</td>
-              <td>
-                <img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')">
-              </td>
-              <td>
-                <img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')">
-              </td>
-              <td>
-                <label style="display: block; cursor: pointer;">
-                  <input type="checkbox" onchange="updateSummary()">
-                  <span class="checkmark">✔</span>
-                  <span class="crossmark">𐄂</span>
-                </label>
-              </td>
-            `;
+          // Kliknięcie w miniaturkę zdjęcia → duży popup
+          row.querySelector("td:nth-child(5) img").addEventListener("click", () => {
+            showPhotoPopup(photo1);
+          });
+          row.querySelector("td:nth-child(6) img").addEventListener("click", () => {
+            showPhotoPopup(photo2);
+          });
 
-            // Obsługa zaznaczenia wiersza i wyświetlania symboli
-            row.querySelector("td:last-child").addEventListener("click", (e) => {
-              // Pobieramy checkbox z całej komórki
-              const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
-              // Przełączamy stan checkboxa
-              checkbox.checked = !checkbox.checked;
-              // Aktualizujemy podsumowanie
-              updateSummary();
+          // Kliknięcie w ostatnią kolumnę → zaznaczanie
+          const lastTd = row.querySelector("td:last-child");
+          lastTd.addEventListener("click", (e) => {
+            const checkbox = lastTd.querySelector("input[type='checkbox']");
+            // Przełączamy stan
+            checkbox.checked = !checkbox.checked;
+            // Aktualizujemy summary
+            updateSummary();
+            // Zmieniamy wygląd wiersza i ikon
+            if (checkbox.checked) {
+              row.classList.add("selected");
+              row.querySelector(".checkmark").style.display = "inline";
+              row.querySelector(".crossmark").style.display = "none";
+            } else {
+              row.classList.remove("selected");
+              row.querySelector(".checkmark").style.display = "none";
+              row.querySelector(".crossmark").style.display = "inline";
+            }
+          });
 
-              // Dodajemy/Usuwamy klasę selected i przełączamy wyświetlanie symbolu
-              if (checkbox.checked) {
-                row.classList.add("selected");
-                row.querySelector(".checkmark").style.display = "inline";
-                row.querySelector(".crossmark").style.display = "none";
-              } else {
-                row.classList.remove("selected");
-                row.querySelector(".checkmark").style.display = "none";
-                row.querySelector(".crossmark").style.display = "inline";
-              }
-            });
-
-            tbody.appendChild(row);
-          }
+          tbody.appendChild(row);
         });
 
         table.appendChild(thead);
@@ -441,8 +424,7 @@
       })
       .catch((error) => {
         console.error("Błąd podczas pobierania danych z GitHub API:", error);
-        const gallery = document.getElementById("gallery");
-        gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+        document.getElementById("gallery").innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
       });
   </script>
 </body>
