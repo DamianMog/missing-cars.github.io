@@ -1,377 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zdjęcia z GitHub API</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        tr, 
-        img {
-            -webkit-touch-callout: none; /* iOS Safari */
-            -webkit-user-select: none;   /* Safari */
-            -khtml-user-select: none;    /* Konqueror HTML */
-            -moz-user-select: none;      /* Old versions of Firefox */
-            -ms-user-select: none;       /* Internet Explorer/Edge */
-            user-select: none;           /* Non-prefixed version */
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zdjęcia z GitHub API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    tr,
+    img {
+      -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none;   /* Safari */
+      -khtml-user-select: none;    /* Konqueror HTML */
+      -moz-user-select: none;      /* Old versions of Firefox */
+      -ms-user-select: none;       /* Internet Explorer/Edge */
+      user-select: none;           /* Non-prefixed version */
+    }
 
-        /* Tabela z modelami */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
-        }
-        img {
-            max-width: 100px;
-            cursor: pointer;
-        }
-        #summary {
-            margin-top: 20px;
-            font-size: 1.2em;
-        }
+    /* Tabela z modelami */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    img {
+      max-width: 100px;
+      cursor: pointer;
+    }
+    #summary {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
 
-        /* Popup do powiększania zdjęć */
-        #popup {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        #popup img {
-            max-width: 90%;
-            max-height: 90%;
-        }
-        #popup .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 30px;
-            color: white;
-            cursor: pointer;
-        }
+    /* Popup do powiększania zdjęć */
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #popup img {
+      max-width: 90%;
+      max-height: 90%;
+    }
+    #popup .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+    }
 
-        /* Podświetlenie wiersza */
-        tr.selected {
-            background-color: #caf0f8;
-        }
+    /* Podświetlenie wiersza */
+    tr.selected {
+      background-color: #caf0f8;
+    }
 
-        /* Ukrycie checkboxa */
-        input[type="checkbox"] {
-            display: none;
-        }
+    /* Ukrycie checkboxa */
+    input[type="checkbox"] {
+      display: none;
+    }
 
-        /* Stylizacja symbolu "✔" */
-        .checkmark {
-            font-size: 24px;
-            color: green;
-            display: none; /* Ukryty domyślnie */
-        }
+    /* Stylizacja symbolu "✔" */
+    .checkmark {
+      font-size: 24px;
+      color: green;
+      display: none; /* Ukryty domyślnie */
+    }
 
-        /* Stylizacja symbolu "𐄂" */
-        .crossmark {
-            font-size: 24px;
-            color: red;
-            display: inline; /* Pokazywany domyślnie */
-        }
+    /* Stylizacja symbolu "𐄂" */
+    .crossmark {
+      font-size: 24px;
+      color: red;
+      display: inline; /* Pokazywany domyślnie */
+    }
 
-        /*
-         * Każdy popup informacyjny (tworzony dynamicznie)
-         * z fade in / fade out w 0.3 s, 
-         * widoczny w 100% przez 2 s.
-         */
-        .info-popup {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            opacity: 0; /* start */
-            transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut 0.3s */
-            z-index: 1001;
-        }
+    /*
+     * Każdy popup informacyjny (tworzony dynamicznie)
+     * z fade in / fade out (0.3 s) i 2 sekundy pełnej widoczności.
+     */
+    .info-popup {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 40px 10px 15px; /* miejsce na X z prawej */
+      border-radius: 5px;
+      opacity: 0; /* Start od 0 */
+      transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut 0.3s */
+      z-index: 1001;
+      /* Docelowa przezroczystość: 90% (0.9) */
+    }
+    .info-popup.visible {
+      opacity: 0.9;
+    }
 
-        /* Docelowa przezroczystość: 90% (0.9) */
-        .info-popup.visible {
-            opacity: 0.9;
-        }
+    /* Ikona X w popupie informacyjnym */
+    .info-popup .info-popup-close {
+      position: absolute;
+      top: 5px;
+      right: 10px;
+      cursor: pointer;
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+    }
 
-        /* Kursor pointer w całej ostatniej kolumnie */
-        table td:last-child:hover {
-            cursor: pointer;
-        }
-    </style>
+    /* Kursor pointer w całej ostatniej kolumnie */
+    table td:last-child:hover {
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <h1>Lista modeli do na sprzedaż - 29.12.2024</h1>
-    <div id="gallery">
-        <p>Ładowanie zdjęć...</p>
-    </div>
-    <div id="summary">
-        Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
-    </div>
+  <h1>Lista modeli do na sprzedaż - 29.12.2024</h1>
+  <div id="gallery">
+    <p>Ładowanie zdjęć...</p>
+  </div>
+  <div id="summary">
+    Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
+  </div>
 
-    <!-- Popup do wyświetlania zdjęć -->
-    <div id="popup">
-        <span class="close-btn">&times;</span>
-        <img src="" alt="Popup Image">
-    </div>
+  <!-- Popup do wyświetlania zdjęć -->
+  <div id="popup">
+    <span class="close-btn">&times;</span>
+    <img src="" alt="Popup Image" />
+  </div>
 
-    <!-- Przycisk Kopiuj -->
-    <button onclick="copySummary()">Kopiuj</button>
+  <!-- Przycisk Kopiuj -->
+  <button onclick="copySummary()">Kopiuj</button>
 
-    <script>
-        const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
-        const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
-        const folderPath = "images"; // Ścieżka do folderu w repozytorium
-        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
+  <script>
+    const repoOwner = "DamianMog"; // Zmień na swoją nazwę użytkownika
+    const repoName = "missing-cars.github.io"; // Zmień na swoją nazwę repozytorium
+    const folderPath = "images"; // Ścieżka do folderu w repozytorium
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
 
-        const popup = document.getElementById("popup");
-        const popupImage = popup.querySelector("img");
-        const closeButton = popup.querySelector(".close-btn");
+    const popup = document.getElementById("popup");
+    const popupImage = popup.querySelector("img");
+    const closeButton = popup.querySelector(".close-btn");
 
-        // Zmienna do podbijania z-index przy kolejnych powiadomieniach:
-        let popupZIndex = 2000;
+    // Zmienna do podbijania z-index przy kolejnych powiadomieniach:
+    let popupZIndex = 2000;
 
-        // Zamknięcie popupu z powiększonym zdjęciem
-        closeButton.addEventListener("click", hidePopup);
+    // Zamknięcie popupu z powiększonym zdjęciem
+    closeButton.addEventListener("click", hidePopup);
 
-        function showPopup(src) {
-            popupImage.src = src;
-            popup.style.display = "flex";
+    function showPopup(src) {
+      popupImage.src = src;
+      popup.style.display = "flex";
+    }
+
+    function hidePopup() {
+      popup.style.display = "none";
+      popupImage.src = "";
+    }
+
+    // Kliknięcie w tło popupu zamyka go
+    window.addEventListener("click", (e) => {
+      if (e.target === popup) {
+        hidePopup();
+      }
+    });
+
+    /**
+     * Tworzy dynamicznie NOWY popup (div)
+     * i animuje go niezależnie (fadeIn / fadeOut).
+     * 0.3 sek. fadeIn, 2 sek. wyświetlania, 0.3 sek. fadeOut.
+     * Ikonka "X" daje możliwość natychmiastowego zamknięcia.
+     */
+    function showInfoPopup(message) {
+      // Tworzymy kontener popupa
+      const newPopup = document.createElement('div');
+      newPopup.classList.add('info-popup');
+
+      // Tworzymy ikonkę "X"
+      const closeBtn = document.createElement('span');
+      closeBtn.classList.add('info-popup-close');
+      closeBtn.innerHTML = '&times;';
+
+      // Tworzymy span z tekstem wiadomości
+      const textSpan = document.createElement('span');
+      textSpan.textContent = message;
+
+      // Dodajemy "X" i tekst do popupa
+      newPopup.appendChild(closeBtn);
+      newPopup.appendChild(textSpan);
+
+      // Podbijamy z-index, aby kolejny popup był nad poprzednimi
+      newPopup.style.zIndex = popupZIndex++;
+
+      // Dodajemy do body
+      document.body.appendChild(newPopup);
+
+      // Krótka pauza, by transition zadziałała (fadeIn)
+      requestAnimationFrame(() => {
+        newPopup.classList.add('visible');
+      });
+
+      // Timery do automatycznego zamknięcia
+      let closeTimer, removeTimer;
+
+      // Po upływie 0.3 + 2 = 2.3s zaczyna się fadeOut
+      closeTimer = setTimeout(() => {
+        newPopup.classList.remove('visible');
+      }, 2300);
+
+      // Po 0.3 + 2 + 0.3 = 2.6s usuwamy popup z DOM
+      removeTimer = setTimeout(() => {
+        if (newPopup.parentNode) {
+          newPopup.parentNode.removeChild(newPopup);
         }
+      }, 2600);
 
-        function hidePopup() {
-            popup.style.display = "none";
-            popupImage.src = "";
-        }
+      // Obsługa kliknięcia w "X" → natychmiastowy fadeOut i usunięcie
+      closeBtn.addEventListener('click', () => {
+        // Czyścimy timery
+        clearTimeout(closeTimer);
+        clearTimeout(removeTimer);
+        // Rozpoczynamy fadeOut
+        newPopup.classList.remove('visible');
+        // Usuwamy element po 0.3s (czas fadeOut)
+        setTimeout(() => {
+          if (newPopup.parentNode) {
+            newPopup.parentNode.removeChild(newPopup);
+          }
+        }, 300);
+      });
+    }
 
-        // Kliknięcie w tło popupu zamyka go
-        window.addEventListener("click", (e) => {
-            if (e.target === popup) {
-                hidePopup();
-            }
+    // Kopiowanie treści z #summary
+    function copySummary() {
+      const summaryText = document.getElementById("summary").textContent;
+      navigator.clipboard.writeText(summaryText).then(() => {
+        showInfoPopup("Skopiowano!");
+      });
+    }
+
+    // Aktualizacja podsumowania po zaznaczeniu/odznaczeniu checkboxa
+    function updateSummary() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+      const summary = document.getElementById("summary");
+
+      if (checkboxes.length === 0) {
+        summary.textContent =
+          "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
+        showInfoPopup("Usunięto z listy.");
+      } else {
+        const selectedIds = [];
+        const selectedPrices = [];
+
+        checkboxes.forEach((checkbox) => {
+          const row = checkbox.closest("tr");
+          const id = row.querySelector("td:nth-child(1)").textContent;
+          const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
+          selectedIds.push(id);
+          selectedPrices.push(price);
         });
 
-        /**
-         * Tworzy dynamicznie NOWY popup (div) 
-         * i animuje go niezależnie (fadeIn / fadeOut).
-         * 0.3 sek. fadeIn, 2 sek. wyświetlania, 0.3 sek. fadeOut.
-         */
-        function showInfoPopup(message) {
-            // Tworzymy nowy div
-            const newPopup = document.createElement('div');
-            newPopup.classList.add('info-popup');
-            newPopup.textContent = message;
+        const total = selectedPrices.reduce((sum, price) => sum + price, 0);
 
-            // Podnosimy z-index, aby każdy kolejny
-            // był nad poprzednim
-            newPopup.style.zIndex = popupZIndex++;
-
-            // Dodajemy do body
-            document.body.appendChild(newPopup);
-
-            // Krótka pauza, by transition zadziałała
-            requestAnimationFrame(() => {
-                newPopup.classList.add('visible'); // fadeIn przez 0.3 s
-            });
-
-            // Po upływie 0.3 + 2 = 2.3 s: rozpoczynamy fadeOut
-            setTimeout(() => {
-                newPopup.classList.remove('visible'); 
-            }, 2300);
-
-            // Po 0.3 + 2 + 0.3 = 2.6 s: usuwamy element z DOM
-            setTimeout(() => {
-                if (newPopup.parentNode) {
-                    newPopup.parentNode.removeChild(newPopup);
-                }
-            }, 2600);
+        if (selectedIds.length === 1) {
+          summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
+        } else {
+          summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
         }
 
-        // Kopiowanie treści z summary
-        function copySummary() {
-            const summaryText = document.getElementById("summary").textContent;
-            navigator.clipboard.writeText(summaryText).then(() => {
-                showInfoPopup("Skopiowano!");
-            });
+        const totalItems = checkboxes.length;
+        showInfoPopup(
+          `Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${total.toFixed(2)} zł`
+        );
+      }
+    }
+
+    // Pobieramy z GitHuba listę plików w folderze images i budujemy tabelkę
+    fetch(apiUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        return response.json();
+      })
+      .then((files) => {
+        const pairs = {};
+        files.forEach((file) => {
+          // Szukamy plików z rozszerzeniem graficznym
+          if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
+            const parts = file.name.split("_");
+            parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
 
-        // Aktualizacja podsumowania po zaznaczeniu/odznaczeniu checkboxa
-        function updateSummary() {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-            const summary = document.getElementById("summary");
+            // Minimum 5 części: ID, 1/2, Name, Series, Price
+            if (parts.length >= 5) {
+              const id = parts[0];
+              const sequence = parts[1];
 
-            if (checkboxes.length === 0) {
-                summary.textContent = "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
-                showInfoPopup("Usunięto z listy.");
-            } else {
-                const selectedIds = [];
-                const selectedPrices = [];
+              if (!pairs[id]) {
+                pairs[id] = {
+                  name: parts[2],
+                  series: parts[3],
+                  price: parts[4],
+                  photo1: null,
+                  photo2: null,
+                };
+              }
 
-                checkboxes.forEach(checkbox => {
-                    const row = checkbox.closest("tr");
-                    const id = row.querySelector("td:nth-child(1)").textContent;
-                    const price = parseFloat(row.querySelector("td:nth-child(4)").textContent);
-                    selectedIds.push(id);
-                    selectedPrices.push(price);
-                });
-
-                const total = selectedPrices.reduce((sum, price) => sum + price, 0);
-
-                if (selectedIds.length === 1) {
-                    summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}. \nŁączna kwota: ${selectedPrices[0]} zł`;
-                } else {
-                    summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
-                }
-
-                const totalItems = checkboxes.length;
-                const totalAmount = total;
-                showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
+              if (sequence === "1") {
+                pairs[id].photo1 = file.download_url;
+              } else if (sequence === "2") {
+                pairs[id].photo2 = file.download_url;
+              }
             }
-        }
+          }
+        });
 
-        // Pobieramy z GitHuba listę plików w folderze images i budujemy tabelkę
-        fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(files => {
-                const pairs = {};
-                files.forEach(file => {
-                    // Szukamy plików z rozszerzeniem graficznym
-                    if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-                        const parts = file.name.split("_");
-                        parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML = "";
 
-                        // Minimum 5 części: ID, 1/2, Name, Series, Price
-                        if (parts.length >= 5) {
-                            const id = parts[0];
-                            const sequence = parts[1];
+        const table = document.createElement("table");
+        const thead = document.createElement("thead");
+        const tbody = document.createElement("tbody");
 
-                            if (!pairs[id]) {
-                                pairs[id] = {
-                                    name: parts[2],
-                                    series: parts[3],
-                                    price: parts[4],
-                                    photo1: null,
-                                    photo2: null
-                                };
-                            }
+        thead.innerHTML = `
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Series</th>
+            <th>Price</th>
+            <th>Photo 1</th>
+            <th>Photo 2</th>
+            <th>Select</th>
+          </tr>
+        `;
 
-                            if (sequence === "1") {
-                                pairs[id].photo1 = file.download_url;
-                            } else if (sequence === "2") {
-                                pairs[id].photo2 = file.download_url;
-                            }
-                        }
-                    }
-                });
+        // Tworzymy wiersz dla każdego zestawu
+        Object.keys(pairs).forEach((id) => {
+          const pair = pairs[id];
 
-                const gallery = document.getElementById("gallery");
-                gallery.innerHTML = "";
+          // Tylko jeśli mamy oba zdjęcia
+          if (pair.photo1 && pair.photo2) {
+            const row = document.createElement("tr");
 
-                const table = document.createElement("table");
-                const thead = document.createElement("thead");
-                const tbody = document.createElement("tbody");
+            row.innerHTML = `
+              <td>${id}</td>
+              <td>${pair.name}</td>
+              <td>${pair.series}</td>
+              <td>${pair.price}</td>
+              <td>
+                <img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')">
+              </td>
+              <td>
+                <img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')">
+              </td>
+              <td>
+                <label style="display: block; cursor: pointer;">
+                  <input type="checkbox" onchange="updateSummary()">
+                  <span class="checkmark">✔</span>
+                  <span class="crossmark">𐄂</span>
+                </label>
+              </td>
+            `;
 
-                thead.innerHTML = `
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Series</th>
-                        <th>Price</th>
-                        <th>Photo 1</th>
-                        <th>Photo 2</th>
-                        <th>Select</th>
-                    </tr>
-                `;
+            // Obsługa zaznaczenia wiersza i wyświetlania symboli
+            row.querySelector("td:last-child").addEventListener("click", (e) => {
+              // Pobieramy checkbox z całej komórki
+              const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
+              // Przełączamy stan checkboxa
+              checkbox.checked = !checkbox.checked;
+              // Aktualizujemy podsumowanie
+              updateSummary();
 
-                // Tworzymy wiersz dla każdego zestawu
-                Object.keys(pairs).forEach(id => {
-                    const pair = pairs[id];
-
-                    // Tylko jeśli mamy oba zdjęcia
-                    if (pair.photo1 && pair.photo2) {
-                        const row = document.createElement("tr");
-
-                        row.innerHTML = `
-                            <td>${id}</td>
-                            <td>${pair.name}</td>
-                            <td>${pair.series}</td>
-                            <td>${pair.price}</td>
-                            <td>
-                                <img src="${pair.photo1}" alt="Photo 1" onclick="showPopup('${pair.photo1}')">
-                            </td>
-                            <td>
-                                <img src="${pair.photo2}" alt="Photo 2" onclick="showPopup('${pair.photo2}')">
-                            </td>
-                            <td>
-                                <label style="display: block; cursor: pointer;">
-                                    <input type="checkbox" onchange="updateSummary()">
-                                    <span class="checkmark">✔</span>
-                                    <span class="crossmark">𐄂</span>
-                                </label>
-                            </td>
-                        `;
-
-                        // Obsługa zaznaczenia wiersza i wyświetlania symboli
-                        row.querySelector("td:last-child").addEventListener("click", (e) => {
-                            // Pobieramy checkbox z całej komórki
-                            const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
-                            // Przełączamy stan checkboxa
-                            checkbox.checked = !checkbox.checked;
-                            // Aktualizujemy podsumowanie
-                            updateSummary();
-
-                            // Dodajemy/Usuwamy klasę selected i przełączamy wyświetlanie symbolu
-                            if (checkbox.checked) {
-                                row.classList.add("selected");
-                                row.querySelector(".checkmark").style.display = "inline";
-                                row.querySelector(".crossmark").style.display = "none";
-                            } else {
-                                row.classList.remove("selected");
-                                row.querySelector(".checkmark").style.display = "none";
-                                row.querySelector(".crossmark").style.display = "inline";
-                            }
-                        });
-
-                        tbody.appendChild(row);
-                    }
-                });
-
-                table.appendChild(thead);
-                table.appendChild(tbody);
-                gallery.appendChild(table);
-            })
-            .catch(error => {
-                console.error("Błąd podczas pobierania danych z GitHub API:", error);
-                const gallery = document.getElementById("gallery");
-                gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+              // Dodajemy/Usuwamy klasę selected i przełączamy wyświetlanie symbolu
+              if (checkbox.checked) {
+                row.classList.add("selected");
+                row.querySelector(".checkmark").style.display = "inline";
+                row.querySelector(".crossmark").style.display = "none";
+              } else {
+                row.classList.remove("selected");
+                row.querySelector(".checkmark").style.display = "none";
+                row.querySelector(".crossmark").style.display = "inline";
+              }
             });
-    </script>
+
+            tbody.appendChild(row);
+          }
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        gallery.appendChild(table);
+      })
+      .catch((error) => {
+        console.error("Błąd podczas pobierania danych z GitHub API:", error);
+        const gallery = document.getElementById("gallery");
+        gallery.innerHTML = "<p>Nie udało się załadować zdjęć.</p>";
+      });
+  </script>
 </body>
 </html>
