@@ -18,17 +18,8 @@
             -ms-user-select: none;       /* Internet Explorer/Edge */
             user-select: none;           /* Non-prefixed version */
         }
-        
-        /* Styl dla elementów w popupie */
-        #popup {
-            -webkit-touch-callout: none; /* iOS Safari */
-            -webkit-user-select: none;   /* Safari */
-            -khtml-user-select: none;    /* Konqueror HTML */
-            -moz-user-select: none;      /* Old versions of Firefox */
-            -ms-user-select: none;       /* Internet Explorer/Edge */
-            user-select: none;           /* Non-prefixed version */
-        }
 
+        /* Tabela z modelami */
         table {
             border-collapse: collapse;
             width: 100%;
@@ -51,7 +42,7 @@
             font-size: 1.2em;
         }
 
-        /* Stylizacja popup do podglądu zdjęcia */
+        /* Popup do powiększania zdjęć */
         #popup {
             display: none;
             position: fixed;
@@ -81,16 +72,19 @@
         tr.selected {
             background-color: #caf0f8;
         }
+
         /* Ukrycie checkboxa */
         input[type="checkbox"] {
             display: none;
         }
+
         /* Stylizacja symbolu "✔" */
         .checkmark {
             font-size: 24px;
             color: green;
             display: none; /* Ukryty domyślnie */
         }
+
         /* Stylizacja symbolu "𐄂" */
         .crossmark {
             font-size: 24px;
@@ -99,8 +93,9 @@
         }
 
         /*
-         * Stylizacja dla dynamicznie tworzonych popupów 
-         * informacyjnych (każdy osobny).
+         * Każdy popup informacyjny (tworzony dynamicznie)
+         * z fade in / fade out w 0.3 s, 
+         * widoczny w 100% przez 2 s.
          */
         .info-popup {
             position: fixed;
@@ -111,13 +106,14 @@
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
-            opacity: 0;              /* Rozpoczynamy od 0 */
-            transition: opacity 0.5s ease-in-out; /* FadeIn/FadeOut 0.5s */
-            z-index: 1001;          /* Będzie modyfikowane w JS */
+            opacity: 0; /* start */
+            transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut 0.3s */
+            z-index: 1001;
         }
-        /* Kiedy jest 'visible', ustawiamy opacity = 1 */
+
+        /* Docelowa przezroczystość: 90% (0.9) */
         .info-popup.visible {
-            opacity: 1;
+            opacity: 0.9;
         }
 
         /* Kursor pointer w całej ostatniej kolumnie */
@@ -154,9 +150,10 @@
         const popupImage = popup.querySelector("img");
         const closeButton = popup.querySelector(".close-btn");
 
-        // Zmienna do podbijania z-index dla kolejnych popupów
+        // Zmienna do podbijania z-index przy kolejnych powiadomieniach:
         let popupZIndex = 2000;
 
+        // Zamknięcie popupu z powiększonym zdjęciem
         closeButton.addEventListener("click", hidePopup);
 
         function showPopup(src) {
@@ -169,6 +166,7 @@
             popupImage.src = "";
         }
 
+        // Kliknięcie w tło popupu zamyka go
         window.addEventListener("click", (e) => {
             if (e.target === popup) {
                 hidePopup();
@@ -176,12 +174,12 @@
         });
 
         /**
-         * Funkcja tworzy dynamicznie NOWY popup (div) 
-         * z komunikatem i obsługą fadeIn/fadeOut,
-         * niezależnie od innych popupów.
+         * Tworzy dynamicznie NOWY popup (div) 
+         * i animuje go niezależnie (fadeIn / fadeOut).
+         * 0.3 sek. fadeIn, 2 sek. wyświetlania, 0.3 sek. fadeOut.
          */
         function showInfoPopup(message) {
-            // Tworzymy nowy DIV
+            // Tworzymy nowy div
             const newPopup = document.createElement('div');
             newPopup.classList.add('info-popup');
             newPopup.textContent = message;
@@ -189,29 +187,29 @@
             // Podnosimy z-index, aby każdy kolejny
             // był nad poprzednim
             newPopup.style.zIndex = popupZIndex++;
-            
+
             // Dodajemy do body
             document.body.appendChild(newPopup);
 
-            // Wpisujemy krótki 'hack' z requestAnimationFrame
-            // lub minimalnym timeoutem, aby transition zadziałała 
+            // Krótka pauza, by transition zadziałała
             requestAnimationFrame(() => {
-                newPopup.classList.add('visible'); // fadeIn (0.5 s)
+                newPopup.classList.add('visible'); // fadeIn przez 0.3 s
             });
 
-            // Po 3.5 sekundy rozpoczynamy fadeOut
+            // Po upływie 0.3 + 2 = 2.3 s: rozpoczynamy fadeOut
             setTimeout(() => {
                 newPopup.classList.remove('visible'); 
-            }, 3500);
+            }, 2300);
 
-            // Po 4 sekundach całkowicie usuwamy popup z DOM
+            // Po 0.3 + 2 + 0.3 = 2.6 s: usuwamy element z DOM
             setTimeout(() => {
                 if (newPopup.parentNode) {
                     newPopup.parentNode.removeChild(newPopup);
                 }
-            }, 4000);
+            }, 2600);
         }
 
+        // Kopiowanie treści z summary
         function copySummary() {
             const summaryText = document.getElementById("summary").textContent;
             navigator.clipboard.writeText(summaryText).then(() => {
@@ -219,6 +217,7 @@
             });
         }
 
+        // Aktualizacja podsumowania po zaznaczeniu/odznaczeniu checkboxa
         function updateSummary() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
             const summary = document.getElementById("summary");
@@ -245,13 +244,14 @@
                 } else {
                     summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}. \nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
                 }
-                
+
                 const totalItems = checkboxes.length;
-                const totalAmount = selectedPrices.reduce((sum, p) => sum + p, 0);
+                const totalAmount = total;
                 showInfoPopup(`Dodano do listy. Łącznie ${totalItems} elementów. Łączna kwota: ${totalAmount.toFixed(2)} zł`);
             }
         }
 
+        // Pobieramy z GitHuba listę plików w folderze images i budujemy tabelkę
         fetch(apiUrl)
             .then(response => {
                 if (!response.ok) {
@@ -262,10 +262,12 @@
             .then(files => {
                 const pairs = {};
                 files.forEach(file => {
+                    // Szukamy plików z rozszerzeniem graficznym
                     if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
                         const parts = file.name.split("_");
                         parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
 
+                        // Minimum 5 części: ID, 1/2, Name, Series, Price
                         if (parts.length >= 5) {
                             const id = parts[0];
                             const sequence = parts[1];
@@ -308,9 +310,11 @@
                     </tr>
                 `;
 
+                // Tworzymy wiersz dla każdego zestawu
                 Object.keys(pairs).forEach(id => {
                     const pair = pairs[id];
 
+                    // Tylko jeśli mamy oba zdjęcia
                     if (pair.photo1 && pair.photo2) {
                         const row = document.createElement("tr");
 
@@ -336,7 +340,7 @@
 
                         // Obsługa zaznaczenia wiersza i wyświetlania symboli
                         row.querySelector("td:last-child").addEventListener("click", (e) => {
-                            // Pobieramy checkbox z całej komórki, niezależnie w co dokładnie kliknięto
+                            // Pobieramy checkbox z całej komórki
                             const checkbox = e.currentTarget.querySelector("input[type='checkbox']");
                             // Przełączamy stan checkboxa
                             checkbox.checked = !checkbox.checked;
