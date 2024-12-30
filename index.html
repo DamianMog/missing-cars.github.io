@@ -38,10 +38,22 @@
       max-width: 100px;
       cursor: pointer;
     }
-    /* Podsumowanie wybranych modeli */
-    #summary {
+
+    /* Podsumowanie wybranych modeli + przycisk kopiowania */
+    #summary-container {
       margin-top: 20px;
       font-size: 1.2em;
+      display: flex; 
+      align-items: flex-start; /* Tekst i przycisk w jednej linii */
+      gap: 10px;               /* Odstęp między przyciskiem a tekstem */
+    }
+    /* Przycisk kopiowania, domyślnie ukryty */
+    #copyBtn {
+      display: none; 
+      cursor: pointer;
+      font-size: 1.5rem; 
+      background: none; 
+      border: none; 
     }
 
     /* Popup do powiększenia zdjęcia */
@@ -82,12 +94,12 @@
     .checkmark {
       font-size: 24px;
       color: green;
-      display: none; /* Początkowo ukryta */
+      display: none; 
     }
     .crossmark {
       font-size: 24px;
       color: red;
-      display: inline; /* Początkowo widoczna */
+      display: inline; 
     }
 
     /*
@@ -105,7 +117,7 @@
       color: white;
       padding: 10px 80px 10px 15px; /* Zwiększony odstęp na przycisk X */
       border-radius: 5px;
-      opacity: 0; /* start od 0 (niewidoczny) */
+      opacity: 0; 
       transition: opacity 0.3s ease-in-out; /* fadeIn/fadeOut */
       z-index: 1001;
     }
@@ -137,9 +149,13 @@
     <p>Ładowanie zdjęć...</p>
   </div>
 
-  <!-- Sekcja podsumowania -->
-  <div id="summary">
-    Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
+  <!-- Kontener łączący przycisk kopiowania i podsumowanie -->
+  <div id="summary-container">
+    <!-- Nowy przycisk kopiowania, ukryty, z symbolem dwóch kartek: 🗐 -->
+    <button id="copyBtn" onclick="copySummary()">🗐</button>
+    <div id="summary">
+      Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.
+    </div>
   </div>
 
   <!-- Popup do powiększenia zdjęć -->
@@ -148,16 +164,13 @@
     <img src="" alt="Popup Image" />
   </div>
 
-  <!-- Przycisk do kopiowania treści z #summary -->
-  <button onclick="copySummary()">Kopiuj</button>
-
   <script>
     /*************************************************************
      * KONFIGURACJA POŁĄCZENIA Z GITHUB
      *************************************************************/
-    const repoOwner = "DamianMog";         // Nazwa użytkownika
-    const repoName = "missing-cars.github.io"; // Nazwa repo
-    const folderPath = "images";           // Ścieżka do folderu
+    const repoOwner = "DamianMog";         
+    const repoName = "missing-cars.github.io"; 
+    const folderPath = "images";           
     const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`;
 
     /*************************************************************
@@ -166,11 +179,10 @@
     const popup = document.getElementById("popup");
     const popupImage = popup.querySelector("img");
     const closeButton = popup.querySelector(".close-btn");
+    const copyBtn = document.getElementById("copyBtn"); // Nowy przycisk kopiowania
 
-    // Zwiększany z każdą nową wiadomością (info-popup)
-    let popupZIndex = 2000;
-    // Przechowuje referencję do aktualnego info-popupa
-    let currentInfoPopup = null;
+    let popupZIndex = 2000;  
+    let currentInfoPopup = null;  
 
     /*************************************************************
      * POPUP ZE ZDJĘCIEM (SHOW/HIDE)
@@ -191,7 +203,7 @@
     });
 
     /*************************************************************
-     * INFO POPUP - KOMUNIKATY O ZAKUPIE, KOPIOWANIU, ETC.
+     * INFO POPUP - KOMUNIKATY
      *************************************************************/
     function showInfoPopup(message) {
       // Usunięcie poprzedniego popupa (bez animacji)
@@ -204,60 +216,50 @@
       const newPopup = document.createElement("div");
       newPopup.classList.add("info-popup");
 
-      // Ikona "X" (natychmiastowe zamknięcie)
+      // Ikona "X" do zamknięcia
       const closeBtn = document.createElement("span");
       closeBtn.classList.add("info-popup-close");
       closeBtn.innerHTML = "&times;";
 
-      // Tekst komunikatu
+      // Treść komunikatu
       const textSpan = document.createElement("span");
       textSpan.textContent = message;
 
-      // Składanie elementów
+      // Składamy elementy
       newPopup.appendChild(closeBtn);
       newPopup.appendChild(textSpan);
 
-      // Z-index rośnie, by nowy popup był nad poprzednimi
+      // Z-index rośnie
       newPopup.style.zIndex = popupZIndex++;
-
-      // Dodajemy do body
       document.body.appendChild(newPopup);
       currentInfoPopup = newPopup;
 
       // FadeIn (0.3 s)
       requestAnimationFrame(() => newPopup.classList.add("visible"));
 
-      // Timery do automatycznego zamknięcia:
-      // Po 2.3 s → fadeOut
+      // Timery (2.3 s → fadeOut, 2.6 s → remove)
       const closeTimer = setTimeout(() => {
         newPopup.classList.remove("visible");
       }, 2300);
-
-      // Po 2.6 s → usunięcie z DOM
       const removeTimer = setTimeout(() => {
-        if (newPopup.parentNode) {
-          newPopup.parentNode.removeChild(newPopup);
-        }
+        if (newPopup.parentNode) newPopup.parentNode.removeChild(newPopup);
         if (currentInfoPopup === newPopup) currentInfoPopup = null;
       }, 2600);
 
-      // Kliknięcie w "X" usuwa popup bez czekania
+      // Klik "X" → natychmiast zamykamy
       closeBtn.addEventListener("click", () => {
         clearTimeout(closeTimer);
         clearTimeout(removeTimer);
-
         newPopup.classList.remove("visible");
         setTimeout(() => {
-          if (newPopup.parentNode) {
-            newPopup.parentNode.removeChild(newPopup);
-          }
+          if (newPopup.parentNode) newPopup.parentNode.removeChild(newPopup);
           if (currentInfoPopup === newPopup) currentInfoPopup = null;
         }, 300);
       });
     }
 
     /*************************************************************
-     * KOPIOWANIE TEKSTU Z #SUMMARY DO SCHOWKA
+     * KOPIOWANIE TREŚCI Z #SUMMARY
      *************************************************************/
     function copySummary() {
       const summaryText = document.getElementById("summary").textContent;
@@ -267,7 +269,7 @@
     }
 
     /*************************************************************
-     * OBSŁUGA ZAZNACZANIA (CHECKBOX) I PODSUMOWANIA
+     * OBSŁUGA ZAZNACZANIA I PODSUMOWANIA
      *************************************************************/
     function updateSummary() {
       const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
@@ -278,14 +280,18 @@
         summary.textContent =
           "Zaznacz wiersze z modelami które Cię interesują, i prześlij tą wiadomość do sprzedawcy.";
         showInfoPopup("Usunięto z listy.");
+        // Ukrywamy przycisk kopiowania
+        copyBtn.style.display = "none";
         return;
       }
 
-      // Coś jest zaznaczone
+      // Jeśli jest coś zaznaczone → pokazujemy przycisk kopiowania
+      copyBtn.style.display = "inline-block";
+
+      // Zbieramy ID i ceny
       const selectedIds = [];
       const selectedPrices = [];
 
-      // Zbieramy ID i ceny
       checkboxes.forEach((checkbox) => {
         const row = checkbox.closest("tr");
         const id = row.querySelector("td:nth-child(1)").textContent;
@@ -294,17 +300,16 @@
         selectedPrices.push(price);
       });
 
-      // Liczenie sumy
+      // Obliczamy sumę
       const total = selectedPrices.reduce((acc, val) => acc + val, 0);
 
-      // Zmiana tekstu w #summary
+      // Aktualizujemy tekst w #summary
       if (selectedIds.length === 1) {
         summary.textContent = `Chcę zakupić następujące model: ${selectedIds[0]}.\nŁączna kwota: ${total} zł`;
       } else {
         summary.textContent = `Chcę zakupić następujące modele: ${selectedIds.join(", ")}.\nŁączna kwota: ${selectedPrices.join(" + ")} = ${total} zł`;
       }
 
-      // Wyświetlamy popup z informacją
       showInfoPopup(
         `Dodano do listy. Łącznie ${checkboxes.length} elementów. Łączna kwota: ${total.toFixed(2)} zł`
       );
@@ -321,32 +326,27 @@
         return response.json();
       })
       .then((files) => {
-        // Parsujemy listę plików, grupując je po ID
+        // Grupujemy pliki po ID
         const pairs = {};
 
         files.forEach((file) => {
-          // Interesują nas tylko pliki z rozszerzeniem jpg/jpeg/png/gif
           if (file.type === "file" && file.name.match(/\.(jpg|jpeg|png|gif)$/)) {
             const parts = file.name.split("_");
-            // Ostatni fragment nazwy (np. "1.jpg") usuwamy rozszerzenie
             parts[parts.length - 1] = parts[parts.length - 1].replace(/\.(jpg|jpeg|png|gif)$/, "");
-
-            // Minimum 5 części: [id, sequence, name, series, price]
             if (parts.length >= 5) {
               const [id, sequence, name, series, price] = parts;
               if (!pairs[id]) {
                 pairs[id] = { name, series, price, photo1: null, photo2: null };
               }
-              // Przypisujemy zdjęcia do photo1 lub photo2
               if (sequence === "1") pairs[id].photo1 = file.download_url;
               if (sequence === "2") pairs[id].photo2 = file.download_url;
             }
           }
         });
 
-        // Tworzymy tabelę w #gallery
+        // Budujemy tabelę
         const gallery = document.getElementById("gallery");
-        gallery.innerHTML = ""; // Czyścimy placeholder
+        gallery.innerHTML = "";
 
         const table = document.createElement("table");
         const thead = document.createElement("thead");
@@ -364,12 +364,10 @@
           </tr>
         `;
 
-        // Dodajemy wiersze dla każdego ID, o ile ma photo1 i photo2
         Object.keys(pairs).forEach((id) => {
           const { name, series, price, photo1, photo2 } = pairs[id];
-          if (!photo1 || !photo2) return; // Musimy mieć oba zdjęcia
+          if (!photo1 || !photo2) return; // Tylko gdy są oba zdjęcia
 
-          // Tworzymy wiersz
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${id}</td>
@@ -387,7 +385,7 @@
             </td>
           `;
 
-          // Kliknięcie w miniaturkę zdjęcia → duży popup
+          // Podpięcie kliknięcia w miniaturki → powiększone zdjęcie
           row.querySelector("td:nth-child(5) img").addEventListener("click", () => {
             showPhotoPopup(photo1);
           });
@@ -395,15 +393,13 @@
             showPhotoPopup(photo2);
           });
 
-          // Kliknięcie w ostatnią kolumnę → zaznaczanie
+          // Kliknięcie w ostatnią kolumnę (Select) → przełączanie zaznaczenia
           const lastTd = row.querySelector("td:last-child");
           lastTd.addEventListener("click", (e) => {
             const checkbox = lastTd.querySelector("input[type='checkbox']");
-            // Przełączamy stan
             checkbox.checked = !checkbox.checked;
-            // Aktualizujemy summary
             updateSummary();
-            // Zmieniamy wygląd wiersza i ikon
+
             if (checkbox.checked) {
               row.classList.add("selected");
               row.querySelector(".checkmark").style.display = "inline";
